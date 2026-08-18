@@ -1,0 +1,18 @@
+# Genesys dev sandbox — offline by construction.
+#
+# Two guarantees that make the deploy-lock physical, not just prompt-discipline:
+#   1. network_mode: none  -> no egress, no push, no remote reachable from inside.
+#   2. the ONLY host path mounted is this repo. $HOME and ~/.claude are NEVER
+#      mounted, so DR-37 capture cannot reach real Claude Code transcripts.
+services:
+  genesys:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: genesys-sandbox:latest
+    working_dir: /workspace
+    volumes:
+      - .:/workspace          # ONLY the repo. No host $HOME, no ~/.claude.
+    network_mode: "none"      # no network at run time
+    init: true
+    command: ["sleep", "infinity"]

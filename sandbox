@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Genesys dev sandbox — your terminal into the isolated Python 3.12 container.
+#
+#   ./sandbox build        build the image
+#   ./sandbox shell        drop into a shell at /workspace (offline, non-root)
+#   ./sandbox test [args]  run pytest inside the container (extra args pass through)
+#   ./sandbox status       show container/compose state
+#   ./sandbox down         stop and remove the container
+#
+# Nothing here deploys or activates live capture. The container has no network
+# and can only see this repo (see compose.yaml).
+set -euo pipefail
+cd "$(dirname "$0")"
+
+usage() { echo "usage: ./sandbox {build|shell|test|status|down}"; }
+
+cmd="${1:-}"
+case "$cmd" in
+  build)  docker compose build ;;
+  shell)  docker compose run --rm genesys bash ;;
+  test)   docker compose run --rm genesys pytest -p no:cacheprovider "${@:2}" ;;
+  status) docker compose ps ;;
+  down)   docker compose down ;;
+  ""|-h|--help|help) usage ;;
+  *) usage; exit 2 ;;
+esac

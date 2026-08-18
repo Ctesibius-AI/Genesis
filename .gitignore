@@ -1,0 +1,20 @@
+node_modules/
+.DS_Store
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+
+# Local Genesys HMAC key material / secrets — never commit (DR-38 R4)
+*.key
+secrets/
+.gstack/
+.claude/settings.local.json

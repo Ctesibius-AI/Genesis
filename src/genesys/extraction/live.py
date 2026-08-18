@@ -1,0 +1,111 @@
+"""Live drain wiring — real graph engine, LLM backend, and embedder scorer (spec §4.14, DR-05c, §8).
+
+All heavy imports (graphiti-core, anthropic, fastembed) are lazy — this module is safe to import
+in the offline test suite. The offline suite never calls build_live / run_once / run_forever so the
+lazy-only contract holds. Wall-clock is only used in run_forever (the runner boundary), not inside
+drain_once itself, preserving testability.
+"""
+
+from __future__ import annotations
+
+import subprocess
+import time
+from pathlib import Path
+
+DATA_ROOT_DEFAULT = Path.home() / ".genesys" / "data"
+
+
+# ---------------------------------------------------------------------------
+# Key helpers (never print the key)
+# ---------------------------------------------------------------------------
+
+def _fetch_api_key() -> str:
+    """Return the Anthropic API key from macOS Keychain. NEVER prints the key (spec §4.14)."""
+    result = subprocess.run(
+        ["security", "find-generic-password", "-a", "genesys", "-s", "ANTHROPIC_API_KEY", "-w"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return result.stdout.strip()
+
+
+# ---------------------------------------------------------------------------
+# Live component factory
+# ---------------------------------------------------------------------------
+
+def build_live(data_root: Path, *, db_path: str | None = None):
+    """Build (engine, backend, scorer) wired to the real graph, LLM, and embedder (spec §4.14).
+
+    All heavy imports (graphiti-core, anthropic, fastembed) happen lazily inside this function.
+    Safe to import at module level in any environment; never call in the offline suite.
+
+    Returns:
+        Tuple of (GraphitiEngine, AnthropicLLMBackend, real_scorer_instance).
+    """
+    import anthropic  # noqa: PLC0415 — lazy: absent offline
+
+    from genesys.graph.adapter import GraphitiEngine  # noqa: PLC0415
+    from genesys.graph.factory import real_client  # noqa: PLC0415
+    from genesys.linking.relatedness import real_scorer  # noqa: PLC0415
+    from genesys.workers.backend import AnthropicLLMBackend  # noqa: PLC0415
+
+    resolved_db = db_path or str(data_root / "graph.db")
+    client = real_client(db_path=resolved_db)
+
+    from datetime import datetime, timezone  # noqa: PLC0415 — stdlib, always present
+
+    def _now_iso() -> str:
+        return datetime.now(tz=timezone.utc).isoformat()
+
+    engine = GraphitiEngine(client, clock=_now_iso)
+    api_key = _fetch_api_key()
+    backend = AnthropicLLMBackend(anthropic.Anthropic(api_key=api_key))
+    scorer = real_scorer()
+    return engine, backend, scorer
+
+
+# ---------------------------------------------------------------------------
+# run_once — single drain pass with doctor re-queue
+# ---------------------------------------------------------------------------
+
+def run_once(data_root: Path, *, now: str) -> list[str]:
+    """Run doctor re-queue then drain_once with live components (spec §4.14, DR-05c).
+
+    Args:
+        data_root: Path to the Genesys data directory.
+        now:       ISO-8601 timestamp used as the drain clock (ts= argument).
+
+    Returns:
+        List of processed entry IDs.
+    """
+    from genesys.doctor import doctor_requeue  # noqa: PLC0415
+    from genesys.extraction.drain import drain_once  # noqa: PLC0415
+
+    doctor_requeue(data_root)
+    engine, backend, scorer = build_live(data_root)
+    return drain_once(data_root, engine, backend, ts=now, scorer=scorer)
+
+
+# ---------------------------------------------------------------------------
+# run_forever — polling loop (launchd / foreground service)
+# ---------------------------------------------------------------------------
+
+def run_forever(data_root: Path, *, interval_s: float = 10.0) -> None:
+    """Drain in a loop with a real wall-clock now, sleeping interval_s between passes.
+
+    Single-instance safety is enforced by drain_once's lockfile. This runner is the wall-clock
+    boundary — run_once / drain_once themselves accept an injected ts= for testability.
+    """
+    from datetime import datetime, timezone  # noqa: PLC0415 — stdlib
+
+    while True:
+        now = datetime.now(tz=timezone.utc).isoformat()
+        try:
+            processed = run_once(data_root, now=now)
+            if processed:
+                print(f"[genesys-worker] drained {len(processed)}: {processed}", flush=True)
+        except Exception as exc:  # noqa: BLE001
+            # Log to stdout/stderr (12-factor: logs as streams); never crash the loop.
+            print(f"[genesys-worker] error during drain: {exc}", flush=True)
+        time.sleep(interval_s)

@@ -1,0 +1,61 @@
+"""QA console serving (spec §14 D-QA-7: localhost, no auth).
+
+`model_to_dict` is a pure stdlib projection (testable offline). `create_app` builds the FastAPI
+app with the `fastapi` import LAZY (kept out of the offline sandbox). Read-only except the one
+bounded comment POST (D-QA-4).
+"""
+
+from dataclasses import asdict
+from pathlib import Path
+
+from genesys.console.comments import add_comment, read_comments
+from genesys.console.dashboard import DASHBOARD_HTML
+from genesys.console.model import console_model
+
+
+def model_to_dict(data_root: Path) -> dict:
+    """Convert console model to JSON-serializable dict (stdlib only)."""
+    m = console_model(data_root)
+    return {
+        "cards": [{**asdict(c), "actions": [asdict(a) for a in c.actions]} for c in m.cards],
+        "health": asdict(m.health) if m.health else None,
+        "security": [asdict(j) for j in m.security],
+        "infra": [asdict(j) for j in m.infra],
+        "persona": {
+            "fact_conflicts": [asdict(x) for x in m.persona.fact_conflicts],
+            "perceived": [asdict(x) for x in m.persona.perceived],
+            "discussion_requests": [asdict(x) for x in m.persona.discussion_requests],
+            "release_log": [asdict(x) for x in m.persona.release_log],
+        },
+    }
+
+
+def create_app(data_root: Path):
+    """Build FastAPI app for D-QA-7 console (localhost, no auth). FastAPI import is lazy."""
+    from fastapi import FastAPI, Request  # noqa: PLC0415 — lazy: offline sandbox stays FastAPI-free
+    from fastapi.responses import HTMLResponse  # noqa: PLC0415
+
+    app = FastAPI(title="Genesys QA Console")
+
+    @app.get("/")
+    def _dashboard():
+        return HTMLResponse(DASHBOARD_HTML, headers={"Cache-Control": "no-store"})
+
+    @app.get("/api/model")
+    def _model() -> dict:
+        return model_to_dict(data_root)
+
+    @app.get("/api/comments")
+    def _comments() -> list[dict]:
+        return [asdict(c) for c in read_comments(data_root)]
+
+    @app.post("/api/comments")
+    async def _add(request: Request) -> dict:
+        c = await request.json()
+        return asdict(add_comment(
+            data_root, ts=c["ts"], episode_id=c["episode_id"],
+            card_section=c["card_section"], comment=c["comment"],
+            verdict_hint=c.get("verdict_hint"),
+        ))
+
+    return app
