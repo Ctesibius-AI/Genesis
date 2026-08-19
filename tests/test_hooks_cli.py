@@ -82,11 +82,12 @@ def _run_main(
 # Tests                                                                         #
 # --------------------------------------------------------------------------- #
 
-def test_cli_stop_hook_exits_zero_and_returns_entry_id(
+def test_cli_stop_hook_exits_zero_and_returns_append_only_sentinel(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
     capsys: pytest.CaptureFixture,
 ):
+    """cli.py passes annotate=False (Option B) so Stop returns the append-only sentinel."""
     transcript = _make_transcript(tmp_path)
     hook = {
         "hook_event_name": "Stop",
@@ -95,7 +96,8 @@ def test_cli_stop_hook_exits_zero_and_returns_entry_id(
     }
     exit_code, result = _run_main(monkeypatch, hook, tmp_path, capsys=capsys)
     assert exit_code == 0
-    assert "entry_id" in result
+    # append-only: WAL grows, no annotation queued
+    assert result == {"appended": True, "annotated": False}
 
 
 def test_cli_session_start_exits_zero_and_returns_context(
@@ -109,11 +111,12 @@ def test_cli_session_start_exits_zero_and_returns_context(
     assert "hookSpecificOutput" in result
 
 
-def test_cli_precompact_exits_zero_and_returns_entry_id(
+def test_cli_precompact_exits_zero_and_returns_append_only_sentinel(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
     capsys: pytest.CaptureFixture,
 ):
+    """cli.py passes annotate=False (Option B) so PreCompact returns the append-only sentinel."""
     transcript = _make_transcript(tmp_path)
     hook = {
         "hook_event_name": "PreCompact",
@@ -122,7 +125,9 @@ def test_cli_precompact_exits_zero_and_returns_entry_id(
     }
     exit_code, result = _run_main(monkeypatch, hook, tmp_path, capsys=capsys)
     assert exit_code == 0
-    assert "entry_id" in result
+    # append-only: WAL grows, no annotation queued
+    assert result.get("appended") is True
+    assert result.get("annotated") is False
 
 
 def test_cli_unknown_event_exits_zero_returns_empty(
@@ -154,7 +159,12 @@ def test_cli_now_from_env_is_used(
     tmp_path: Path,
     capsys: pytest.CaptureFixture,
 ):
-    """GENESYS_NOW env var is used as the clock."""
+    """GENESYS_NOW env var is used as the clock.
+
+    With Option B (annotate=False), cli.py produces the append-only sentinel; the WAL
+    line's ts embeds the date from GENESYS_NOW — verifiable via the WAL segment, not
+    entry_id (no annotation is created on the auto-hook path).
+    """
     transcript = _make_transcript(tmp_path)
     custom_now = "2026-07-04T00:00:00+00:00"
     hook = {
@@ -170,8 +180,13 @@ def test_cli_now_from_env_is_used(
     captured = capsys.readouterr()
     result = json.loads(captured.out)
     assert exit_code == 0
-    # Entry ID embeds the date from GENESYS_NOW
-    assert "EP-2026-07-04" in result["entry_id"]
+    # append-only sentinel (Option B)
+    assert result == {"appended": True, "annotated": False}
+    # WAL segment for the injected date was written
+    from genesys.wal.record import WalRecord
+    from genesys.wal.store import read_segment
+    lines = read_segment(tmp_path, WalRecord.MEMORY_GRADE, "2026-07-04")
+    assert lines, "WAL MEMORY_GRADE must have a line dated from GENESYS_NOW"
 
 
 def test_cli_now_from_hook_json_is_used_when_env_absent(
@@ -179,7 +194,11 @@ def test_cli_now_from_hook_json_is_used_when_env_absent(
     tmp_path: Path,
     capsys: pytest.CaptureFixture,
 ):
-    """Hook JSON 'now' field is used when GENESYS_NOW is not set."""
+    """Hook JSON 'now' field is used when GENESYS_NOW is not set.
+
+    With Option B (annotate=False) the auto-hook path produces no annotation, so we verify
+    the WAL segment for the hook's date instead of checking entry_id.
+    """
     transcript = _make_transcript(tmp_path)
     hook = {
         "hook_event_name": "Stop",
@@ -195,7 +214,12 @@ def test_cli_now_from_hook_json_is_used_when_env_absent(
     captured = capsys.readouterr()
     result = json.loads(captured.out)
     assert exit_code == 0
-    assert "EP-2026-06-15" in result["entry_id"]
+    assert result == {"appended": True, "annotated": False}
+    # WAL segment for the hook-injected date was written
+    from genesys.wal.record import WalRecord
+    from genesys.wal.store import read_segment
+    lines = read_segment(tmp_path, WalRecord.MEMORY_GRADE, "2026-06-15")
+    assert lines, "WAL MEMORY_GRADE must have a line dated from hook JSON 'now'"
 
 
 def test_cli_output_is_valid_json(

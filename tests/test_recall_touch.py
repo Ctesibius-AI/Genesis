@@ -14,12 +14,12 @@ class _Anchor:
     episode_ids: list[str]
 
 
-ANCHORS = [_Anchor("Acme invoicing", ["EP-9"]), _Anchor("Atlas", ["EP-3", "EP-4"])]
+ANCHORS = [_Anchor("Phrase invoicing", ["EP-9"]), _Anchor("Mnemon", ["EP-3", "EP-4"])]
 
 
 def test_anchor_match_yields_episodic_touch():
-    t = detect_touch("where did we land on Acme invoicing?", ANCHORS)
-    assert t.touched is True and t.anchor == "Acme invoicing"
+    t = detect_touch("where did we land on Phrase invoicing?", ANCHORS)
+    assert t.touched is True and t.anchor == "Phrase invoicing"
     assert t.tier is Tier.EPISODIC and t.episode_ids == ["EP-9"]
 
 
@@ -34,9 +34,9 @@ def test_trivial_turn_yields_none_tier_no_read():
 
 
 def test_match_is_whole_word_case_insensitive():
-    assert detect_touch("ATLAS is the store", ANCHORS).anchor == "Atlas"
+    assert detect_touch("MNEMON is the store", ANCHORS).anchor == "Mnemon"
     # substring inside another word must not match
-    assert detect_touch("atlaslike", ANCHORS, substantive=True).tier is Tier.FULL
+    assert detect_touch("premnemonic", ANCHORS, substantive=True).tier is Tier.FULL
 
 
 def test_is_trivial_rules():

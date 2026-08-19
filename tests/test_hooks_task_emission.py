@@ -24,11 +24,11 @@ def _transcript_with_tasks(tmp_path: Path) -> Path:
     """A transcript that also carries the documented Genesys task-record intake shape
     (same shape as tests/fixtures/sample_transcript.json)."""
     records = [
-        {"type": "user", "message": {"role": "user", "content": "let's ship INV-042"}},
+        {"type": "user", "message": {"role": "user", "content": "let's ship PHR008"}},
         {"type": "assistant", "message": {"role": "assistant",
             "content": [{"type": "text", "text": "On it."}]}},
-        {"type": "task_created", "task_id": "t-1", "text": "send INV-042"},
-        {"type": "task_completed", "task_id": "t-1", "text": "INV-042 sent"},
+        {"type": "task_created", "task_id": "t-1", "text": "send PHR008"},
+        {"type": "task_completed", "task_id": "t-1", "text": "PHR008 sent"},
     ]
     path = tmp_path / "transcript.jsonl"
     path.write_text("\n".join(json.dumps(r) for r in records) + "\n", encoding="utf-8")
@@ -71,7 +71,7 @@ def test_stop_hook_emits_task_events_when_enabled(tmp_path: Path):
     assert kinds == ["task.created", "task.done"]
     # attributed to the ledger entry the same save produced
     assert all(e.source_episode == result["entry_id"] for e in events)
-    assert events[0].title == "send INV-042"
+    assert events[0].title == "send PHR008"
 
 
 def test_precompact_emits_task_events_when_enabled(tmp_path: Path):

@@ -20,6 +20,7 @@ genesys-tasks = "genesys.tasks.cli:main"
 genesys-hook = "genesys.hooks.cli:main"
 genesys-worker = "genesys.extraction.worker_cli:main"
 genesys-backfill = "genesys.backfill.cli:main"
+genesys-save-moment = "genesys.save_moment:main"
 
 [project.optional-dependencies]
 dev = [

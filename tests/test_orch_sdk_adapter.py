@@ -64,11 +64,11 @@ def test_adapter_satisfies_orchestrator_protocol():
 
 def test_dispatch_runs_the_subagent_and_shapes_the_summary():
     run = _FakeSubagentRun()
-    run.set("T1", {"summary": "analysed the invoice", "findings": ["INV-042 is next", "May was INV-041"]})
+    run.set("T1", {"summary": "analysed the invoice", "findings": ["PHR008 is next", "May was PHR007"]})
     out = SdkOrchestrator(run).dispatch(_task(1))
     assert out.task_id == "T1"
     assert out.summary == "analysed the invoice"
-    assert out.findings == ("INV-042 is next", "May was INV-041")
+    assert out.findings == ("PHR008 is next", "May was PHR007")
     # the adapter actually ran the task through the SDK run callable
     assert [t.task_id for t in run.ran] == ["T1"]
 

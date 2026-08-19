@@ -36,21 +36,21 @@ def _capture_with_task(created_label: str, completed: bool, task_id: str = "t-1"
 
 
 def test_task_created_signal_emits_task_created_event(tmp_path: Path):
-    cap = _capture_with_task("send INV-042", completed=False)
+    cap = _capture_with_task("send PHR008", completed=False)
     emitted = emit_task_events_from_capture(
         tmp_path, cap, ts="2026-08-17T10:00:00+00:00", source_episode="EP-1"
     )
     events = read_events(tmp_path)
     assert len(events) == 1
     assert events[0].event == "task.created"
-    assert events[0].title == "send INV-042"
+    assert events[0].title == "send PHR008"
     assert events[0].source_episode == "EP-1"
     # the emitter returns the store task_id it minted, keyed by capture id
     assert emitted == {"t-1": events[0].task_id}
 
 
 def test_task_completed_signal_emits_done_referencing_created(tmp_path: Path):
-    cap = _capture_with_task("send INV-042", completed=True)
+    cap = _capture_with_task("send PHR008", completed=True)
     emit_task_events_from_capture(
         tmp_path, cap, ts="2026-08-17T10:00:00+00:00", source_episode="EP-1"
     )

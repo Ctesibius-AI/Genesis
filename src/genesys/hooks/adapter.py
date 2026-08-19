@@ -17,13 +17,16 @@ import json
 from pathlib import Path
 from typing import Any
 
-from genesys.capture.mirror import mirror_events
+from genesys.capture.mirror import mirror_events, raw_span_from_result
 from genesys.config import get_assistant_name, get_principal
 from genesys.diary.backend import FakeBackend
 from genesys.diary.hooks import precompact_flush, session_start_context
 from genesys.hooks.translate import cc_transcript_to_events, provisional_summary
 from genesys.save import fast_path_save
+from genesys.save_cursor import latest_span_end_for_session
 from genesys.tasks.capture_emit import emit_task_events_from_capture
+from genesys.wal.courier import append_and_annotate
+from genesys.wal.write_cursor import read_captured_count, write_captured_count
 
 
 # --------------------------------------------------------------------------- #
@@ -48,17 +51,6 @@ def _read_jsonl(path: str | Path) -> list[dict]:
         except (json.JSONDecodeError, ValueError):
             continue
     return records
-
-
-def _raw_span_from_result(capture_result: Any) -> str:
-    """Extract the memory-grade projection text for raw_span.
-
-    Joins the content of all memory_grade.entries (the clean, scrubbed projection).
-    """
-    entries = capture_result.memory_grade.entries
-    if not entries:
-        return ""
-    return "\n".join(e.content for e in entries if e.content)
 
 
 def _timestamps_from_events(events: list[dict]) -> tuple[str, str]:
@@ -86,6 +78,9 @@ def dispatch(
     now: str,
     speakers: list[str] | None = None,
     emit_task_events: bool = False,
+    cursor_delta: bool = False,
+    wal: bool = False,
+    annotate: bool = True,
 ) -> dict:
     """Dispatch a Claude Code hook event to the appropriate Genesys pipeline action.
 
@@ -108,6 +103,19 @@ def dispatch(
             task-lifecycle signal (DR-37, §4.2a) is emitted into the event-sourced Tasks
             store (§4.10, DR-17), attributed to the ledger entry the same save produced.
             Idempotent: Stop then SessionEnd over the same transcript does not double-emit.
+        cursor_delta: opt-in (default OFF, backward-compatible like the P5 wiring). When True,
+            Stop/SessionEnd banks only material after this session's last saved cursor; a ring
+            with nothing new is skipped. Stop then SessionEnd over the same transcript does not
+            double-save.
+        wal: opt-in (default OFF, backward-compatible like the P5 / Plan-1 wiring). When True,
+            Stop/SessionEnd/PreCompact append the delta to both rolling records and annotate the
+            (cursor, now) window instead of copying an episode (§2.1/§2.2, DR-24/DR-43); n rings
+            → n non-overlapping annotations (F4 dissolved).
+        annotate: opt-in (default True, backward-compatible). When False and ``wal=True``, the
+            WAL rings are still appended as a raw safety net but ``save_annotation`` is skipped —
+            no queue item is created (append-only mode for automatic hooks). When the courier
+            returns None on this path, dispatch returns ``{"appended": True, "annotated": False}``.
+            Has no effect when ``wal=False`` (the legacy copy path always annotates).
 
     Returns:
         A dict result appropriate to the hook event type. Unknown events return {}.
@@ -145,13 +153,59 @@ def dispatch(
         transcript_path = hook.get("transcript_path", "")
         session_id = hook.get("session_id", "")
 
-        records = _read_jsonl(transcript_path) if transcript_path else []
+        all_records = _read_jsonl(transcript_path) if transcript_path else []
+
+        if wal and not annotate:
+            # Append-only / capture-once path (Part A fix):
+            # Process ONLY the new records since the last WAL append for this session.
+            # The write-cursor tracks how many transcript records have been captured, so
+            # each reply is appended to the WAL EXACTLY ONCE regardless of ring count.
+            already_captured = read_captured_count(data_root, session_id)
+            if len(all_records) < already_captured:
+                # Compaction/shrink detected: the transcript was rewritten shorter than the
+                # stored cursor. Re-derive from record 0 so post-compaction content is never
+                # silently lost. Duplication is acceptable; loss is not.
+                new_records = all_records
+            else:
+                new_records = all_records[already_captured:]
+            if not new_records:
+                return {"appended": True, "annotated": False}
+            events = cc_transcript_to_events(new_records)
+            capture_result = mirror_events(events)
+            summary = provisional_summary(events)
+            cursor = latest_span_end_for_session(data_root, session_id)
+            append_and_annotate(
+                data_root, capture_result=capture_result, cursor=cursor, now=now,
+                session_id=session_id, speakers=speakers, jot=summary, annotate=False,
+            )
+            # Always update the write cursor to the full record count so the next ring
+            # skips everything already captured. This also self-corrects a stale cursor.
+            write_captured_count(data_root, session_id, len(all_records))
+            return {"appended": True, "annotated": False}
+
+        records = all_records
         events = cc_transcript_to_events(records)
         capture_result = mirror_events(events)
 
-        raw_span = _raw_span_from_result(capture_result)
+        raw_span = raw_span_from_result(capture_result)
         summary = provisional_summary(events)
         span_start, span_end = _timestamps_from_events(events)
+
+        if wal:
+            # F5 WAL path with annotation (§2.1/§2.2): append the delta to both rings +
+            # annotate the (cursor, now) window. F4 dissolved structurally.
+            cursor = latest_span_end_for_session(data_root, session_id)
+            entry = append_and_annotate(
+                data_root, capture_result=capture_result, cursor=cursor, now=now,
+                session_id=session_id, speakers=speakers, jot=summary, annotate=annotate,
+            )
+            if entry is None:
+                return {"skipped": True, "reason": "no-new-material"}
+            if emit_task_events:
+                emit_task_events_from_capture(
+                    data_root, capture_result, ts=now, source_episode=entry.entry_id
+                )
+            return {"entry_id": entry.entry_id}
 
         entry = fast_path_save(
             data_root,
@@ -163,7 +217,11 @@ def dispatch(
             span_end=span_end,
             ts=now,
             source_transcript_ref=hook.get("transcript_path", ""),
+            cursor_delta=cursor_delta,
         )
+        if entry is None:
+            # F4-interim: nothing new for this session — skip (no task emission either).
+            return {"skipped": True, "reason": "no-new-material"}
         # P5 seam (opt-in): capture task-lifecycle signal -> task.* events (§4.10, DR-37).
         if emit_task_events:
             emit_task_events_from_capture(
@@ -178,13 +236,52 @@ def dispatch(
         transcript_path = hook.get("transcript_path", "")
         session_id = hook.get("session_id", "")
 
-        records = _read_jsonl(transcript_path) if transcript_path else []
+        all_records = _read_jsonl(transcript_path) if transcript_path else []
+
+        if wal and not annotate:
+            # Append-only / capture-once path for PreCompact (same as Stop/SessionEnd).
+            already_captured = read_captured_count(data_root, session_id)
+            if len(all_records) < already_captured:
+                # Compaction/shrink detected: re-derive from record 0 to avoid silent loss.
+                new_records = all_records
+            else:
+                new_records = all_records[already_captured:]
+            if not new_records:
+                return {"appended": True, "annotated": False, "diary_regenerated": False}
+            events = cc_transcript_to_events(new_records)
+            capture_result = mirror_events(events)
+            summary = provisional_summary(events)
+            cursor = latest_span_end_for_session(data_root, session_id)
+            append_and_annotate(
+                data_root, capture_result=capture_result, cursor=cursor, now=now,
+                session_id=session_id, speakers=speakers, jot=summary, annotate=False,
+            )
+            # Always write corrected cursor — self-heals stale count after shrink.
+            write_captured_count(data_root, session_id, len(all_records))
+            return {"appended": True, "annotated": False, "diary_regenerated": False}
+
+        records = all_records
         events = cc_transcript_to_events(records)
         capture_result = mirror_events(events)
 
-        raw_span = _raw_span_from_result(capture_result)
+        raw_span = raw_span_from_result(capture_result)
         summary = provisional_summary(events)
         span_start, span_end = _timestamps_from_events(events)
+
+        if wal:
+            # DR-14 durability preserved as a forced final append+annotate (§5).
+            cursor = latest_span_end_for_session(data_root, session_id)
+            entry = append_and_annotate(
+                data_root, capture_result=capture_result, cursor=cursor, now=now,
+                session_id=session_id, speakers=speakers, jot=summary, annotate=annotate,
+            )
+            if entry is None:
+                return {"entry_id": None, "diary_regenerated": False}
+            if emit_task_events:
+                emit_task_events_from_capture(
+                    data_root, capture_result, ts=now, source_episode=entry.entry_id
+                )
+            return {"entry_id": entry.entry_id, "diary_regenerated": False}
 
         result = precompact_flush(
             data_root,

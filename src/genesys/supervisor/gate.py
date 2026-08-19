@@ -7,6 +7,7 @@ is restricted to quarantine + re-extraction. Recommends via workers; writes via 
 
 from __future__ import annotations
 
+import random
 from pathlib import Path
 
 from genesys.graph.engine import GraphEdge, GraphEngine, Verdict
@@ -41,7 +42,24 @@ def apply_remedy(engine: GraphEngine, data_root: Path, edge: GraphEdge, remedy: 
 
 def run_gate(engine: GraphEngine, data_root: Path, episode_id: str, jot: str, manifest: str,
              created: list[GraphEdge], backend: LLMBackend, *, ts: str,
-             raw_span: str = "", contract: str = "") -> ScreenResult:
+             raw_span: str = "", contract: str = "",
+             ladder: LadderConfig | None = None, window: str | None = None,  # type: ignore[name-defined]
+             ride_along: str = "", rng: random.Random | None = None,
+             chart: FalsePassChart | None = None) -> ScreenResult:  # type: ignore[name-defined]
+    # Opt-in inspection ladder (spec §3, DR-44). Default OFF: the built jot-Screen path below runs
+    # verbatim. The jot is NOT passed to the ladder (§4 — jot is a display label, not the reference).
+    # Lazy imports break the gate ↔ ladder circular dependency (ladder.py imports apply_remedy
+    # from gate.py at module level; gate imports ladder only on the hot path).
+    if ladder is not None:
+        from genesys.inspection.audit import FalsePassChart  # noqa: PLC0415
+        from genesys.inspection.ladder import run_ladder  # noqa: PLC0415
+        return run_ladder(
+            engine, data_root, episode_id,
+            window=(window if window is not None else raw_span),
+            manifest=manifest, created=created, backend=backend, ts=ts,
+            ride_along=ride_along, contract=contract, cfg=ladder,
+            rng=(rng or random.Random()), chart=(chart or FalsePassChart()),
+        )
     result = screen(backend, jot, manifest)
     if result.verdict != "FLAG":
         append_journal(data_root, JournalEntry(ts=ts, action="gate-resolve", scope=episode_id,

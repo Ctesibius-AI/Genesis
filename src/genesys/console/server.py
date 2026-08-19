@@ -5,7 +5,10 @@ app with the `fastapi` import LAZY (kept out of the offline sandbox). Read-only 
 bounded comment POST (D-QA-4).
 """
 
+from __future__ import annotations
+
 from dataclasses import asdict
+from datetime import datetime, timezone
 from pathlib import Path
 
 from genesys.console.comments import add_comment, read_comments
@@ -13,9 +16,23 @@ from genesys.console.dashboard import DASHBOARD_HTML
 from genesys.console.model import console_model
 
 
-def model_to_dict(data_root: Path) -> dict:
-    """Convert console model to JSON-serializable dict (stdlib only)."""
-    m = console_model(data_root)
+def model_to_dict(data_root: Path, *, now: str | None = None,
+                  settings_path: Path | None = None) -> dict:
+    """Convert console model to JSON-serializable dict (stdlib only).
+
+    `now` is optional. When supplied, the deadman surface is populated.
+    When omitted, `now` is read from the wall-clock HERE — the legitimate
+    boundary for wall-clock reads (mirrors how hooks/cli.py resolves it).
+    Existing callers that pass only `data_root` are unaffected.
+    """
+    if now is None:
+        now = datetime.now(timezone.utc).isoformat()
+    m = console_model(data_root, now=now, settings_path=settings_path)
+    queue = {
+        "pending": sum(1 for c in m.cards if c.extracted == "no"),
+        "in_progress": sum(1 for c in m.cards if c.extracted == "in-progress"),
+        "done": sum(1 for c in m.cards if c.extracted == "done"),
+    }
     return {
         "cards": [{**asdict(c), "actions": [asdict(a) for a in c.actions]} for c in m.cards],
         "health": asdict(m.health) if m.health else None,
@@ -27,6 +44,8 @@ def model_to_dict(data_root: Path) -> dict:
             "discussion_requests": [asdict(x) for x in m.persona.discussion_requests],
             "release_log": [asdict(x) for x in m.persona.release_log],
         },
+        "deadman": asdict(m.deadman) if m.deadman is not None else None,
+        "queue": queue,
     }
 
 

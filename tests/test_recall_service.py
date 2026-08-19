@@ -54,7 +54,7 @@ def test_expand_drops_perceived_of_principal_fail_closed():
 
 def test_search_three_channel_score_and_honest_empty():
     g = FakeGraph()
-    hit = _edge("a", "Acme invoicing INV-042", "EP-9")
+    hit = _edge("a", "phrase invoicing PHR008", "EP-9")
     g.seed(hit)
     search = FakeRecallSearch()
     search.set_semantic("invoicing", [hit])

@@ -29,7 +29,8 @@ def drain_once(data_root: Path, engine: GraphEngine, backend: LLMBackend, *,
                ts: str, window: int = 5,
                scorer: RelatednessScorer | None = None,
                supersessions: dict[str, SupersessionDecision] | None = None,
-               project: bool = False) -> list[str]:
+               project: bool = False,
+               ladder=None, rng=None, chart=None, ride_along_for=None) -> list[str]:
     """Drain up to `window` queued entries, optionally applying semantic links, recording
     Supervisor-decided supersession, and projecting the final link state to typed edges.
 
@@ -38,6 +39,15 @@ def drain_once(data_root: Path, engine: GraphEngine, backend: LLMBackend, *,
       records supersedes/caused_by on the ledger and writes graph superseded_by (§8.2, §4.9).
     - `project`: project each drained entry's complete links into typed episode edges last
       (D-SPINE-4). All three are opt-in; existing callers omitting them work unchanged.
+    - `ladder`: LadderConfig | None — opt-in inspection ladder (spec §3, DR-44). Default None
+      keeps the built jot-Screen path for every entry. When supplied, the ladder window is
+      `episode.content` (already the read_window-sourced raw span, Plan 2). NOTE: the
+      `window` parameter above (int, default 5) is the DETECTION window (number of entries
+      to drain) — it is DISTINCT from and never clobbered by the ladder params below.
+    - `rng`: injected random.Random for deterministic sampling audit. Default None.
+    - `chart`: FalsePassChart for Screen false-pass rate control chart. Default None.
+    - `ride_along_for`: optional callable (entry -> str) supplying the 3-episode ride-along
+      context (Tier 0 opaque extra corpus). Default None => empty ride-along.
     Structural links (prev/next) are set at save time; DR-09 lookback+backfill holds throughout.
     """
     processed: list[str] = []
@@ -52,7 +62,11 @@ def drain_once(data_root: Path, engine: GraphEngine, backend: LLMBackend, *,
             supervise_commit(engine, data_root, episode.episode_id, jot=episode.jot,
                              manifest=render_manifest(result), backend=backend,
                              commit_start=commit_start, commit_end=commit_end, ts=ts,
-                             raw_span=episode.content)
+                             raw_span=episode.content,
+                             ladder=ladder,
+                             window=(episode.content if ladder is not None else None),
+                             ride_along=(ride_along_for(entry) if ride_along_for is not None else ""),
+                             rng=rng, chart=chart)
             # Semantic enrichment (DR-20): apply after graph commit, before marking DONE.
             # Structural links (prev/next) were already set at save time.
             if scorer is not None:

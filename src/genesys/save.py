@@ -15,6 +15,7 @@ from genesys.ids import next_episode_id
 from genesys.ledger.entry import Extracted, LedgerEntry, Links, Provenance
 from genesys.ledger.store import append
 from genesys.linking.structural import apply_structural_links
+from genesys.save_cursor import latest_span_end_for_session
 from genesys.scrub.scrubber import scrub_text
 
 
@@ -32,7 +33,18 @@ def fast_path_save(
     salience: bool = False,
     prev: str | None = None,
     continues: str | None = None,
-) -> LedgerEntry:
+    cursor_delta: bool = False,
+) -> LedgerEntry | None:
+    # F4-interim (spec §2.2/§7 item 2): bank only material after this session's last
+    # saved cursor. Opt-in (default OFF, backward-compatible, P5-shape). Skip-when-
+    # nothing-new mirrors the backfill idempotency guard. The incoming cursor uses the
+    # same rule as entry_cursor: span_end if present, else ts (empty-span_end reality).
+    if cursor_delta:
+        banked = latest_span_end_for_session(data_root, session_id)
+        incoming = span_end or ts
+        if banked and incoming <= banked:
+            return None  # nothing new for this session — skip the save
+
     date = ts[:10]
     episode_id = next_episode_id(data_root, date)
 

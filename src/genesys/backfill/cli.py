@@ -89,6 +89,11 @@ def main(argv: list[str] | None = None) -> int:
         "--dry-run", action="store_true",
         help="Print the ordered plan and write NOTHING.",
     )
+    parser.add_argument(
+        "--wal", action="store_true",
+        help="Use the F5 WAL path: append the delta to the rolling record + annotate a "
+             "window, instead of copying an episode (§2.1/§2.2, unifies with the live path).",
+    )
     args = parser.parse_args(argv)
 
     data_root = Path(args.data).expanduser()
@@ -132,7 +137,7 @@ def main(argv: list[str] | None = None) -> int:
             "session_id": plan.session_id,
         }
         try:
-            result = dispatch(hook, data_root, now=_inject_now(plan))
+            result = dispatch(hook, data_root, now=_inject_now(plan), wal=args.wal)
         except Exception as exc:  # noqa: BLE001 — one bad session must not kill the batch
             print(f"error  {plan.session_id}  ({exc}) — skipped")
             skipped.append(plan.session_id)

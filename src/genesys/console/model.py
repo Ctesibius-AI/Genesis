@@ -13,7 +13,7 @@ from pathlib import Path
 
 from genesys.console.cards import Card, build_cards
 from genesys.console.persona import PersonaSurface, persona_view
-from genesys.console.views import Health, health_strip, infra_view, security_view
+from genesys.console.views import DeadmanStrip, Health, deadman_strip, health_strip, infra_view, security_view
 from genesys.journal.journal import JOURNAL_ACTIONS
 from genesys.journal.journal import JournalEntry
 from genesys.persona.department import PerceptionDepartment
@@ -49,6 +49,7 @@ class ConsoleModel:
     security: list[JournalEntry] = field(default_factory=list)
     infra: list[JournalEntry] = field(default_factory=list)
     persona: PersonaSurface = field(default_factory=PersonaSurface)
+    deadman: DeadmanStrip | None = None
 
 
 def obs1_uncovered() -> set[str]:
@@ -56,11 +57,15 @@ def obs1_uncovered() -> set[str]:
 
 
 def console_model(data_root: Path, *, dept: PerceptionDepartment | None = None,
-                  self_view: dict[str, int] | None = None) -> ConsoleModel:
+                  self_view: dict[str, int] | None = None,
+                  now: str | None = None, threshold_hours: float = 24.0,
+                  settings_path: Path | None = None) -> ConsoleModel:
     return ConsoleModel(
         cards=build_cards(data_root),
         health=health_strip(data_root),
         security=security_view(data_root),
         infra=infra_view(data_root),
         persona=persona_view(data_root, dept=dept, self_view=self_view),
+        deadman=(deadman_strip(data_root, now=now, threshold_hours=threshold_hours,
+                               settings_path=settings_path) if now is not None else None),
     )

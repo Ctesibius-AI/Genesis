@@ -21,7 +21,7 @@ def test_task_event_rejects_unknown_event():
 def test_roundtrip_jsonl():
     e = TaskEvent(ts="2026-08-17T10:00:00Z", event="task.created", task_id="TS-1",
                   source_episode="EP-1", project_ref="PR-9", kind="commitment",
-                  title="send INV-042", due="2026-08-31", recipient="Acme")
+                  title="send PHR008", due="2026-08-31", recipient="Phrase")
     assert from_jsonl(to_jsonl(e)) == e
 
 

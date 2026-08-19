@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from genesys.doctor import doctor_deadman
 from genesys.journal.journal import JournalEntry, read_journal
 
 _SECURITY = {"scrub", "redact", "redact-cascade"}
@@ -50,3 +51,29 @@ def security_view(data_root: Path) -> list[JournalEntry]:
 
 def infra_view(data_root: Path) -> list[JournalEntry]:
     return [j for j in read_journal(data_root) if j.action in _INFRA]
+
+
+@dataclass
+class DeadmanStrip:
+    last_ring_ts: str
+    age_hours: float | None
+    stale: bool
+    wired: dict[str, bool] | None
+    alerts: list[str]
+
+
+def deadman_strip(data_root: Path, *, now: str, threshold_hours: float = 24.0,
+                  settings_path: Path | None = None) -> DeadmanStrip:
+    """F3 loud surface: fold the deadman report into console alerts (spec §7 item 1)."""
+    r = doctor_deadman(data_root, now=now, threshold_hours=threshold_hours,
+                       settings_path=settings_path)
+    alerts: list[str] = []
+    if r.stale:
+        if r.age_hours is None:
+            alerts.append("CAPTURE STALE: no capture ring on record")
+        else:
+            alerts.append(f"CAPTURE STALE: no ring in {r.age_hours:.1f}h")
+    if r.wired is not None:
+        alerts.extend(f"HOOK UNWIRED: {e}" for e, ok in r.wired.items() if not ok)
+    return DeadmanStrip(last_ring_ts=r.last_ring_ts, age_hours=r.age_hours,
+                        stale=r.stale, wired=r.wired, alerts=alerts)

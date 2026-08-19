@@ -44,5 +44,23 @@ def existing_episode_ids(data_root: Path) -> list[str]:
     return [p.stem for p in d.glob("EP-*.md")]
 
 
+def existing_ledger_entry_ids(data_root: Path) -> list[str]:
+    """Return all entry_ids recorded in the ledger (complements existing_episode_ids).
+
+    Annotations write no episode file, so their IDs are invisible to
+    existing_episode_ids. Scanning the ledger ensures the per-day sequence counter
+    never repeats, even across a mix of copy-path episodes and WAL annotations.
+    """
+    from genesys.ledger.store import read_all  # noqa: PLC0415 — local to avoid circular
+
+    return [e.entry_id for e in read_all(data_root)]
+
+
 def next_episode_id(data_root: Path, date: str) -> str:
-    return format_episode_id(date, next_sequence(existing_episode_ids(data_root), date))
+    """Return the next unique episode/annotation ID for *date*.
+
+    Scans both episode files (copy path) and ledger entries (annotation path) so
+    the per-day sequence is strictly monotone regardless of which path wrote last.
+    """
+    all_ids = existing_episode_ids(data_root) + existing_ledger_entry_ids(data_root)
+    return format_episode_id(date, next_sequence(all_ids, date))

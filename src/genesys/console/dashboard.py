@@ -135,6 +135,10 @@ DASHBOARD_HTML = """<!doctype html>
     color:var(--ochre);line-height:1.35}
   .aff{display:flex;gap:6px;margin-top:9px}
   .aff .chip{cursor:default}
+  /* queue badge */
+  .queue-badge{display:flex;align-items:center}
+  .queue-badge .chip{font-size:12px;padding:3px 10px;font-weight:600;letter-spacing:.05em}
+
   @media (max-width:900px){.grid{grid-template-columns:1fr}.vitals{grid-template-columns:repeat(3,1fr)}
     header{flex-direction:column;align-items:flex-start;gap:10px}.inscription{text-align:left}}
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -147,6 +151,7 @@ DASHBOARD_HTML = """<!doctype html>
     <div class="brand">
       <h1>Genesys</h1><span class="eyebrow">QA&nbsp;console</span>
     </div>
+    <div class="queue-badge" id="queueBadge"></div>
     <div class="inscription">γνῶθι σεαυτόν
       <span class="root" id="root">read-only · localhost · honest-empty</span>
     </div>
@@ -345,6 +350,13 @@ function persona(p){
 async function load(){
   const m = await (await fetch("/api/model")).json();
   vitals(m.health); cards(m.cards||[]);
+  const q = m.queue || {pending:0,in_progress:0,done:0};
+  const qEl = $("#queueBadge");
+  if(q.pending > 0){
+    qEl.innerHTML = `<span class="chip warn">Queue: ${esc(q.pending)} pending</span>`;
+  } else {
+    qEl.innerHTML = `<span class="chip ok">Queue: 0 pending / all extracted</span>`;
+  }
   journalList($("#security"), m.security||[], "Clean — no scrub or redaction events.");
   journalList($("#infra"), m.infra||[], "No worker errors or lock violations.");
   $("#secCount").textContent = (m.security||[]).length || "";

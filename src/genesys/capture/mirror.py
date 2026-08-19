@@ -237,3 +237,27 @@ def mirror_events(events: Iterable[TranscriptEvent | dict]) -> CaptureResult:
         memory_grade=memory,
         scrub_matches=matches,
     )
+
+
+# --------------------------------------------------------------------------- #
+# Projection text helpers (shared by adapter and wal.courier)                  #
+# --------------------------------------------------------------------------- #
+
+def raw_span_from_result(capture_result: CaptureResult) -> str:
+    """Join the memory-grade projection text (clean, scrubbed).
+
+    Moved here from hooks.adapter to break the adapter↔courier circular import.
+    """
+    entries = capture_result.memory_grade.entries
+    if not entries:
+        return ""
+    return "\n".join(e.content for e in entries if e.content)
+
+
+def flight_span_from_result(capture_result: CaptureResult) -> str:
+    """Join the flight-recorder projection text (full incl. thinking).
+
+    Moved here from wal.courier to keep both span helpers co-located.
+    """
+    entries = capture_result.flight_recorder.entries
+    return "\n".join(e.content for e in entries if e.content)

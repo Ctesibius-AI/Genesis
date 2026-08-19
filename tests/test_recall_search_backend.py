@@ -20,10 +20,10 @@ def _e(eid):
 
 def test_fake_scripts_both_channels_and_truncates_to_top_n():
     s = FakeRecallSearch()
-    s.set_semantic("Acme invoicing", [_e("a"), _e("b"), _e("c")])
-    s.set_keyword("Acme invoicing", [_e("a")])
-    assert [e.edge_id for e in s.semantic("Acme invoicing", 2)] == ["a", "b"]
-    assert [e.edge_id for e in s.keyword("Acme invoicing", 5)] == ["a"]
+    s.set_semantic("phrase invoicing", [_e("a"), _e("b"), _e("c")])
+    s.set_keyword("phrase invoicing", [_e("a")])
+    assert [e.edge_id for e in s.semantic("phrase invoicing", 2)] == ["a", "b"]
+    assert [e.edge_id for e in s.keyword("phrase invoicing", 5)] == ["a"]
 
 
 def test_fake_unscripted_query_is_empty_both_channels():

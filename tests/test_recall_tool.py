@@ -25,7 +25,7 @@ def _service(edges_by_query):
 
 
 def test_recall_tool_drives_full_search():
-    hit = GraphEdge(edge_id="a", fact="INV-042 issued", episodes=["EP-9"], verdict=Verdict.CONFIRMED)
+    hit = GraphEdge(edge_id="a", fact="PHR008 issued", episodes=["EP-9"], verdict=Verdict.CONFIRMED)
     r = recall_tool(_service({"invoicing": [hit]}), "invoicing")
     assert r.verdict.score == 100
     assert [re.edge.edge_id for re in r.edges] == ["a"]

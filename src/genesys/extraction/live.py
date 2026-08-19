@@ -79,12 +79,26 @@ def run_once(data_root: Path, *, now: str) -> list[str]:
     Returns:
         List of processed entry IDs.
     """
+    import random  # noqa: PLC0415 — stdlib
+
     from genesys.doctor import doctor_requeue  # noqa: PLC0415
     from genesys.extraction.drain import drain_once  # noqa: PLC0415
+    from genesys.inspection.audit import FalsePassChart  # noqa: PLC0415
+    from genesys.inspection.ladder import LadderConfig  # noqa: PLC0415
 
     doctor_requeue(data_root)
     engine, backend, scorer = build_live(data_root)
-    return drain_once(data_root, engine, backend, ts=now, scorer=scorer)
+    # SWITCH-ON (owner go-ahead 2026-08-19): live extraction runs the inspection ladder.
+    # shadow=False → Tier 0 hard flags route to the Verifier (owner ruling); Screen-on-raw
+    # (Sonnet) + Verifier (Opus) + 5% audit are live. The chart is fresh per pass — cross-run
+    # control-chart persistence is a documented follow-up. ride_along stays "" until the
+    # grapher supplies an adjacent-episode corpus (shadow of that check widens harmlessly).
+    return drain_once(
+        data_root, engine, backend, ts=now, scorer=scorer,
+        ladder=LadderConfig(shadow=False),
+        rng=random.Random(),
+        chart=FalsePassChart(),
+    )
 
 
 # ---------------------------------------------------------------------------

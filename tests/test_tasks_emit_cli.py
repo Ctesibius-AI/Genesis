@@ -7,7 +7,7 @@ from genesys.tasks.emit import record_created, record_done, record_due_moved
 
 def test_emitters_roundtrip_through_department(tmp_path):
     tid = record_created(tmp_path, ts="2026-08-17T10:00:00Z", source_episode="EP-1",
-                         title="send INV-042", kind="commitment", due="2026-08-31")
+                         title="send PHR008", kind="commitment", due="2026-08-31")
     assert tid == "TS-2026-08-17.0000"
     record_due_moved(tmp_path, ts="2026-08-18T10:00:00Z", task_id=tid, due="2026-08-20",
                      source_episode="EP-2")

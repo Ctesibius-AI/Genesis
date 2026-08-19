@@ -60,7 +60,14 @@ def main(argv: list[str] | None = None) -> int:
     now = _resolve_now(hook)
 
     try:
-        result = dispatch(hook, data_root, now=now)
+        # SWITCH-ON (owner go-ahead 2026-08-19): live capture uses the WAL path.
+        # wal=True → append+annotate (no per-save episode copy); cursor_delta=True →
+        # bank only material after the session's last cursor (F4 guard). Default-OFF
+        # legacy copy path remains available to callers that omit these.
+        # annotate=False → automatic hooks are append-only (raw WAL safety net only);
+        # no queue item is created. Only the manual /save path creates annotations.
+        result = dispatch(hook, data_root, now=now, wal=True, cursor_delta=True,
+                          annotate=False)
     except Exception as exc:  # noqa: BLE001
         print(json.dumps({"error": str(exc)}), file=sys.stdout)
         return 1

@@ -43,14 +43,14 @@ def test_drain_applies_semantic_links(tmp_path):
     from genesys.extraction.drain import drain_once
     from genesys.workers.backend import FakeLLMBackend
 
-    e1 = fast_path_save(tmp_path, raw_span="Acme invoicing detail", summary="Acme invoicing",
+    e1 = fast_path_save(tmp_path, raw_span="GRAFIX invoicing detail", summary="GRAFIX invoicing",
                         session_id="s1", speakers=["the principal"], span_start="0", span_end="1",
                         ts="2026-08-17T10:00:00Z")
-    e2 = fast_path_save(tmp_path, raw_span="Acme INV-042 detail", summary="Acme INV-042",
+    e2 = fast_path_save(tmp_path, raw_span="GRAFIX PHR008 detail", summary="GRAFIX PHR008",
                         session_id="s1", speakers=["the principal"], span_start="1", span_end="2",
                         ts="2026-08-17T10:05:00Z")
     scorer = FakeRelatednessScorer()
-    scorer.set("Acme invoicing", "Acme INV-042", 0.9)
+    scorer.set("GRAFIX invoicing", "GRAFIX PHR008", 0.9)
 
     drain_once(tmp_path, FakeGraph(), FakeLLMBackend('{"verdict": "PASS", "flags": []}'),
                ts="2026-08-17T10:06:00Z", scorer=scorer)

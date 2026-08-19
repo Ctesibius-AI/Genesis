@@ -13,11 +13,11 @@ def _entry(eid, ts, summary, session="s1", **links):
 
 
 def test_same_topic_is_symmetric_backfilled(tmp_path):
-    p = _entry("EP-1", "2026-08-17T10:00:00Z", "Acme invoicing")
+    p = _entry("EP-1", "2026-08-17T10:00:00Z", "GRAFIX invoicing")
     append(tmp_path, p)
-    cur = _entry("EP-2", "2026-08-17T10:05:00Z", "Acme invoice INV-042")
+    cur = _entry("EP-2", "2026-08-17T10:05:00Z", "GRAFIX invoice PHR008")
     scorer = FakeRelatednessScorer()
-    scorer.set("Acme invoicing", "Acme invoice INV-042", 0.9)
+    scorer.set("GRAFIX invoicing", "GRAFIX invoice PHR008", 0.9)
 
     apply_semantic_links(tmp_path, cur, scorer)
 
@@ -28,11 +28,11 @@ def test_same_topic_is_symmetric_backfilled(tmp_path):
 
 
 def test_references_is_directional_no_backfill(tmp_path):
-    p = _entry("EP-1", "2026-08-17T10:00:00Z", "the Atlas repo")
+    p = _entry("EP-1", "2026-08-17T10:00:00Z", "the Mnemon repo")
     append(tmp_path, p)
-    cur = _entry("EP-2", "2026-08-17T10:05:00Z", "a tangent about Atlas")
+    cur = _entry("EP-2", "2026-08-17T10:05:00Z", "a tangent about Mnemon")
     scorer = FakeRelatednessScorer()
-    scorer.set("the Atlas repo", "a tangent about Atlas", 0.5)  # between REFERENCES and SAME_TOPIC
+    scorer.set("the Mnemon repo", "a tangent about Mnemon", 0.5)  # between REFERENCES and SAME_TOPIC
 
     apply_semantic_links(tmp_path, cur, scorer)
 
