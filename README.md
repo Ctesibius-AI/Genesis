@@ -7,7 +7,7 @@ captures what was said, extracts the facts and commitments worth keeping, links 
 into a **bi-temporal knowledge graph**, and gives the agent a disciplined way to
 recall the right thing at the right moment — all on your own machine.
 
-The assistant persona at the center of the engine is named **Daimon**.
+The assistant is named **Daimon** (configurable).
 
 ---
 
@@ -18,9 +18,9 @@ The pipeline is four stages:
 1. **Capture** — a session transcript is mirrored into a scrubbed, memory-grade
    projection. Secrets and sensitive tokens are stripped *at capture time* by a
    deterministic scrubber, so nothing dangerous ever reaches durable storage.
-2. **Extract** — the captured span is drained into candidate facts, traits, values,
-   tasks, and commitments. Extraction workers screen, judge, and verify candidates
-   before anything is committed.
+2. **Extract** — the captured span is drained into candidate facts, decisions, tasks,
+   and commitments. Extraction workers screen, judge, and verify candidates before
+   anything is committed.
 3. **Knowledge graph** — surviving facts are linked into a **bi-temporal** graph:
    every edge knows both when it was *valid in the world* and when the system
    *learned* it. Supersession is first-class — new information doesn't overwrite old
@@ -28,23 +28,16 @@ The pipeline is four stages:
    any past moment.
 4. **Recall** — a tiered retrieval service decides how hard to look based on the
    turn: trivial turns read nothing, anchored turns read the relevant episodes, and
-   substantive turns run a full search. A read-fence keeps the agent's *perceptions*
-   of the principal separate from durable fact.
+   substantive turns run a full search. Recall is scoped to a **closed allow-list** of
+   named memory relations, so it returns facts, decisions, tasks, and the like — and
+   **never a read of *you***.
 
-### The two-record persona model
+### Memory-only — never a read of you
 
-Genesys keeps two deliberately separate identity records:
-
-- **The self-view (about the assistant)** — Daimon's own compiled identity: how she
-  thinks, what she never does, her shared language with the principal. This record is
-  blind to her opinions of the principal.
-- **The perceived-view (about the principal)** — Daimon's inferred read of the
-  principal, held on `perceives` edges. These are **permanently provisional**: no
-  amount of evidence promotes a perception into a confirmed fact, and they never leak
-  into the assistant's own identity or into the principal's constitution.
-
-This separation is enforced structurally, not by convention — the perceived-view is
-fenced out of both compilers by construction.
+Genesys stores **facts, decisions, tasks, and entities** — not a profile of the user.
+There is no persona/profiling layer in this build: recall is guarded by a fail-closed
+allow-list of the named memory relations, so an edge that isn't one of those is
+excluded by construction rather than surfaced as a "read" of the principal.
 
 ---
 
@@ -145,7 +138,7 @@ config file for identity:
 |--------------------------|----------------------------------------------------------------|
 | `GENESYS_DATA`           | Data root for owned files + the ledger. **Required** at runtime.|
 | `GENESYS_PRINCIPAL`      | Who the memory is for. Overrides the config file.              |
-| `GENESYS_ASSISTANT`      | Assistant persona name (default `Daimon`).                     |
+| `GENESYS_ASSISTANT`      | Assistant name (default `Daimon`).                             |
 | `GENESYS_CONFIG`         | Override the config-file location (default `~/.genesys/config.json`). |
 | `GENESYS_LOCAL_HMAC_KEY` | Keyed HMAC for redaction tombstones. Never commit or log it.   |
 
