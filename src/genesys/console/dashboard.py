@@ -116,8 +116,7 @@ DASHBOARD_HTML = """<!doctype html>
   button:hover{filter:brightness(1.08)}
   :focus-visible{outline:2px solid var(--verdigris);outline-offset:2px}
 
-  /* persona surface (view 5) */
-  .persona{margin:34px 0 0;border-top:1px solid var(--line);padding-top:22px}
+  /* persona surface (view 5) removed with the persona profiler (D-GCW-6 / BT-4b) */
   .pgrid{display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:start;margin-bottom:22px}
   .ppanel{}
   .ptitle{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;
@@ -199,34 +198,7 @@ DASHBOARD_HTML = """<!doctype html>
       </section>
     </div>
   </div>
-  <!-- view 5 · persona surface (spec §14, §10.1) — read-only two-record inspection -->
-  <section class="persona fade" id="personaSurface">
-    <div class="colhead">Persona surface — two records, never merged
-      <span class="count" id="personaNote">read-only · reconciliation &amp; discussion</span></div>
-    <div class="pgrid">
-      <div class="ppanel">
-        <div class="ptitle">Fact conflicts <span class="count" id="fcCount"></span></div>
-        <div class="phelp">Ask-window C1/C2 items you stated inconsistently — reconcile in conversation (§10.1a).</div>
-        <div id="factConflicts"></div>
-      </div>
-      <div class="ppanel">
-        <div class="ptitle">Perceived-view <span class="count" id="pvCount"></span></div>
-        <div class="phelp">Your self-view vs Daimon's perceived-view per anchor. A read, never a verdict (§10.1b).</div>
-        <div id="perceived"></div>
-      </div>
-    </div>
-    <div class="pgrid">
-      <div class="ppanel">
-        <div class="ptitle">Discussion requests <span class="count" id="drCount"></span></div>
-        <div id="discussionRequests"></div>
-      </div>
-      <div class="ppanel">
-        <div class="ptitle">Release log <span class="count" id="rlCount"></span></div>
-        <div class="phelp">That a release happened, its scope, and why it closed — never the opinion itself (§14).</div>
-        <div id="releaseLog"></div>
-      </div>
-    </div>
-  </section>
+  <!-- persona surface (view 5) removed with the persona profiler (D-GCW-6 / BT-4b) -->
 </div>
 
 <script>
@@ -236,9 +208,8 @@ let selected = null;
 // action -> chip category (the gate's verdict language)
 const CAT = {
   "gate-resolve":"ok","verdict":"ok","ask-resolved":"ok","day-processed":"ok","snapshot-verify":"ok",
-  "gate-flag":"warn","ask-queued":"warn","drift-report":"warn","backlog-breach":"warn","contest":"warn",
-  "revert":"change","supersede":"change","class-migrate":"change","merge":"change","perceive":"change",
-  "alignment":"change","opinion-release":"change","opinion-ask":"change","opinion-confirm":"change",
+  "gate-flag":"warn","ask-queued":"warn","drift-report":"warn","contest":"warn",
+  "revert":"change","supersede":"change","class-migrate":"change","merge":"change",
   "worker-error":"alarm","lock-violation":"alarm","restore":"alarm",
   "scrub":"sec","redact":"sec","redact-cascade":"sec",
 };
@@ -302,50 +273,7 @@ function comments(rows){
     : `<div class="empty">No QA notes yet. Select an episode and file your read of the gate.</div>`;
 }
 
-// view 5 · persona surface — render the four sub-surfaces (§14, §10.1). All read-only.
-function persona(p){
-  p = p || {};
-  const fc = p.fact_conflicts||[], pv = p.perceived||[], dr = p.discussion_requests||[], rl = p.release_log||[];
-  $("#fcCount").textContent = fc.length || "";
-  $("#pvCount").textContent = pv.length || "";
-  $("#drCount").textContent = dr.length || "";
-  $("#rlCount").textContent = rl.length || "";
-
-  // (a) fact-conflict panel — open ask-window C1/C2 items awaiting reconciliation
-  $("#factConflicts").innerHTML = fc.length ? fc.map(f => `<div class="row">
-      <span class="chip warn">ask-queued</span>
-      <span>${esc(f.target)}</span>${f.class_?`<span class="chip">${esc(f.class_)}</span>`:""}
-      <span class="rt">${shortTs(f.ts)}</span></div>`).join("")
-    : `<div class="empty">No open fact conflicts — nothing you've stated is in tension.</div>`;
-
-  // (b) perceived-view panel — both records side-by-side per anchor + PT-7 notice on divergence
-  $("#perceived").innerHTML = pv.length ? pv.map(a => `<div class="anchorrow ${esc(a.alignment)}">
-      <div class="atop"><span class="aname">${esc(a.anchor)}</span>
-        <span class="chip ${a.alignment==="divergent"?"warn":"ok"}">${esc(a.alignment)}</span></div>
-      <div class="records">
-        <span class="rec">self-view <b>${a.self_samples}</b> stated</span>
-        <span class="rec">perceived <b>${esc(a.band||"—")}</b>${a.spread?" · "+esc(a.spread):""} (×${a.perceived_strength})</span>
-        ${a.disputed?`<span class="chip warn">disputed</span>`:""}
-      </div>
-      ${a.notice?`<div class="notice">${esc(a.notice)}</div>`:""}
-      <div class="aff"><span class="chip">discuss</span><span class="chip">dispute</span></div>
-    </div>`).join("")
-    : `<div class="empty">No perceived-view anchors yet. Daimon perceives; she never concludes.</div>`;
-
-  // (c) discussion-requests list — queued/served/closed (PT-8 mirror)
-  $("#discussionRequests").innerHTML = dr.length ? dr.map(r => `<div class="row">
-      <span class="chip ${r.state==="closed"?"ok":r.state==="served"?"change":"warn"}">${esc(r.state)}</span>
-      <span>${esc(r.anchor)}</span>
-      <span class="rt">${esc(r.request_id)}</span></div>`).join("")
-    : `<div class="empty">No discussion requests. The queue is pulled, never nudged.</div>`;
-
-  // (d) release log — lifecycle only; scope + close reason, NEVER the opinion content (§14)
-  $("#releaseLog").innerHTML = rl.length ? rl.map(e => `<div class="row">
-      <span class="chip change">${esc(e.action)}</span>
-      <span>${esc(e.anchor||"")}${e.scope?" · "+esc(e.scope):""}${e.close_reason?" · "+esc(e.close_reason):""}</span>
-      <span class="rt">${shortTs(e.ts)}</span></div>`).join("")
-    : `<div class="empty">No releases. Daimon's opinion stays locked until you ask.</div>`;
-}
+// persona surface (view 5) removed with the persona profiler (D-GCW-6 / BT-4b)
 
 async function load(){
   const m = await (await fetch("/api/model")).json();
@@ -361,7 +289,6 @@ async function load(){
   journalList($("#infra"), m.infra||[], "No worker errors or lock violations.");
   $("#secCount").textContent = (m.security||[]).length || "";
   $("#infraCount").textContent = (m.infra||[]).length || "";
-  persona(m.persona);
   comments(await (await fetch("/api/comments")).json());
 }
 

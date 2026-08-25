@@ -38,12 +38,7 @@ def model_to_dict(data_root: Path, *, now: str | None = None,
         "health": asdict(m.health) if m.health else None,
         "security": [asdict(j) for j in m.security],
         "infra": [asdict(j) for j in m.infra],
-        "persona": {
-            "fact_conflicts": [asdict(x) for x in m.persona.fact_conflicts],
-            "perceived": [asdict(x) for x in m.persona.perceived],
-            "discussion_requests": [asdict(x) for x in m.persona.discussion_requests],
-            "release_log": [asdict(x) for x in m.persona.release_log],
-        },
+        # persona surface (view 5) removed with the persona profiler (D-GCW-6 / BT-4b)
         "deadman": asdict(m.deadman) if m.deadman is not None else None,
         "queue": queue,
     }

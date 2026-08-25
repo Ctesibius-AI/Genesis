@@ -16,11 +16,7 @@ JOURNAL_ACTIONS: frozenset[str] = frozenset({
     "class-migrate", "merge", "gate-flag", "gate-resolve", "day-processed",
     # class auditor
     "class-audit", "drift-report", "fragment-merge", "example-conflict",
-    # persona layer (v1.6)
-    "perceive", "perceive-dispute", "alignment", "discussion-request", "backlog-breach",
-    "opinion-ask", "opinion-confirm", "opinion-release", "opinion-close",
-    # calibration / constitution
-    "rotation", "example-quarantine", "constitution-refresh",
+    # persona layer + calibration/constitution — REMOVED with the persona profiler (D-GCW-6 / BT-4b)
     # security
     "scrub", "redact", "redact-cascade",
     # recovery

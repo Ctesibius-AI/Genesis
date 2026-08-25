@@ -28,14 +28,12 @@ def _entry(eid, ts) -> LedgerEntry:
 def test_model_to_dict_is_json_serializable(tmp_path: Path):
     d = model_to_dict(tmp_path)
     json.dumps(d)  # must not raise
-    assert set(d) >= {"cards", "health", "security", "infra", "persona", "deadman"}
+    assert set(d) >= {"cards", "health", "security", "infra", "deadman"}
 
 
-def test_model_to_dict_persona_has_four_sub_surfaces(tmp_path: Path):
-    d = model_to_dict(tmp_path)
-    p = d["persona"]
-    assert set(p) >= {"fact_conflicts", "perceived", "discussion_requests", "release_log"}
-    json.dumps(p)  # must not raise (dataclasses fully projected to dicts)
+def test_model_to_dict_has_no_persona_surface(tmp_path: Path):
+    # BT-4b / D-GCW-6: the persona surface (view 5) was removed from the OSS build.
+    assert "persona" not in model_to_dict(tmp_path)
 
 
 def test_model_to_dict_includes_deadman_when_now_given(tmp_path: Path):

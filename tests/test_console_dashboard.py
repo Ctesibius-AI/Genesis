@@ -1,9 +1,8 @@
-"""Tests for the rendered QA-console dashboard (spec §14 D-QA-7, view 5).
+"""Tests for the rendered QA-console dashboard (spec §14 D-QA-7).
 
-The dashboard is a single stdlib HTML string served at `/`. It renders `/api/model`,
-which now carries `persona` (the four sub-surfaces). These tests assert the persona surface
-is actually rendered — the audit gap this branch closes — and that its render is fenced:
-the release-log render must never reach for opinion-content fields.
+BT-4b / D-GCW-6: the persona surface (view 5) was removed from the OSS build with the persona
+profiler. These tests assert it is gone from the rendered dashboard — no container, no JS render,
+no persona data hooks.
 """
 
 from __future__ import annotations
@@ -11,37 +10,17 @@ from __future__ import annotations
 from genesys.console.dashboard import DASHBOARD_HTML
 
 
-def test_dashboard_has_persona_surface_container():
-    # a rendered surface, not just a data route (§14 view 5 must be visible)
-    assert 'id="personaSurface"' in DASHBOARD_HTML
+def test_dashboard_has_no_persona_surface_container():
+    assert 'id="personaSurface"' not in DASHBOARD_HTML
+    assert "m.persona" not in DASHBOARD_HTML
 
 
-def test_dashboard_renders_all_four_persona_sub_surfaces():
-    html = DASHBOARD_HTML
-    # the JS consumes m.persona and renders each sub-surface into its own hook
-    assert "m.persona" in html
-    assert 'id="factConflicts"' in html
-    assert 'id="perceived"' in html
-    assert 'id="discussionRequests"' in html
-    assert 'id="releaseLog"' in html
+def test_dashboard_has_no_persona_data_hooks():
+    for hook in ('id="factConflicts"', 'id="perceived"', 'id="discussionRequests"', 'id="releaseLog"'):
+        assert hook not in DASHBOARD_HTML
 
 
-def test_dashboard_perceived_panel_renders_both_records_and_notice():
-    html = DASHBOARD_HTML
-    # both records side-by-side + PT-7 notice on divergence (§10.1b)
-    assert "self_samples" in html
-    assert "perceived_strength" in html
-    assert "notice" in html
-    assert "alignment" in html
-
-
-def test_dashboard_release_log_never_references_opinion_content_fields():
-    html = DASHBOARD_HTML
-    # release log shows lifecycle only — action + scope + close reason (§14, Security-view posture)
-    assert "close_reason" in html
-    assert "scope" in html
-    # the fence: the release-log payload from /api/model carries no opinion/observation
-    # content field at all, so there is nothing for the client to render or leak.
-    assert "observation" not in html
-    assert "opinion_content" not in html
-    assert "opinion_text" not in html
+def test_dashboard_still_renders_core_surfaces():
+    # the non-persona surfaces are untouched
+    for hook in ('id="security"', 'id="infra"'):
+        assert hook in DASHBOARD_HTML

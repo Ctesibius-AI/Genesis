@@ -3,8 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 
 from genesys.console.model import ConsoleModel, console_model, obs1_uncovered
-from genesys.console.persona import PersonaSurface
-from genesys.journal.journal import JOURNAL_ACTIONS
 
 
 def test_obs1_every_journal_action_maps_to_a_view():
@@ -17,9 +15,7 @@ def test_console_model_composes(tmp_path: Path):
     assert m.cards == [] and m.security == [] and m.infra == []  # empty data → empty views
 
 
-def test_console_model_carries_persona_surface(tmp_path: Path):
+def test_console_model_has_no_persona_surface(tmp_path: Path):
+    # BT-4b / D-GCW-6: the persona surface (view 5) was removed from the OSS build.
     m = console_model(tmp_path)
-    assert isinstance(m.persona, PersonaSurface)
-    # empty data -> all four sub-surfaces honest-empty
-    assert m.persona.fact_conflicts == [] and m.persona.perceived == []
-    assert m.persona.discussion_requests == [] and m.persona.release_log == []
+    assert not hasattr(m, "persona")

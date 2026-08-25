@@ -18,10 +18,17 @@ def _e(action="verdict", ts="2026-08-17T10:00:00+00:00", **kw) -> JournalEntry:
     return JournalEntry(ts=ts, action=action, scope="EP-2026-08-17.0001", **kw)
 
 
-def test_union_has_the_persona_and_security_types():
-    for a in ("verdict", "revert", "supersede", "contest", "opinion-release",
-              "alignment", "scrub", "redact", "day-processed", "backlog-breach"):
+def test_union_has_the_core_action_types():
+    for a in ("verdict", "revert", "supersede", "contest",
+              "scrub", "redact", "day-processed", "stale-lock-cleared"):
         assert a in JOURNAL_ACTIONS
+
+
+def test_persona_actions_removed_from_union():
+    # BT-4b / D-GCW-6: persona-layer + calibration/constitution actions removed with the profiler.
+    for a in ("perceive", "alignment", "opinion-release", "backlog-breach",
+              "discussion-request", "rotation", "constitution-refresh"):
+        assert a not in JOURNAL_ACTIONS
 
 
 def test_class_key_serializes_as_class_not_class_():
