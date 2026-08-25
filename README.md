@@ -39,6 +39,18 @@ There is no persona/profiling layer in this build: recall is guarded by a fail-c
 allow-list of the named memory relations, so an edge that isn't one of those is
 excluded by construction rather than surfaced as a "read" of the principal.
 
+### How memory is saved (v1)
+
+In v1, **`/save` is the trigger that materializes memory.** Ordinary sessions are always
+*captured* — the transcript is mirrored into the WAL on `Stop`/`SessionEnd`/`PreCompact`,
+so nothing is lost — but that captured content stays raw until you run **`/save`** (or
+`genesys-save-moment`), which extracts it into the knowledge graph. Until then the
+session-start line reports *"this session's capture is unsaved — run `/save` to remember
+it"* rather than claiming there are no memories. Any `/save`'d-but-not-yet-extracted
+content is also drained (bounded) at the next session start.
+
+*Automatic extraction of ordinary sessions (no `/save` needed) is a planned future change.*
+
 ---
 
 ## Privacy posture

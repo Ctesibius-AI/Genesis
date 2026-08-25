@@ -60,8 +60,8 @@ def test_write_merges_without_clobbering_the_foreign_stop_hook(tmp_path: Path):
     _write(p, {"hooks": {"Stop": [FOREIGN_STOP]}, "permissions": {"allow": ["x"]}})
     actions = write_hook_wiring(p, command=CMD, consent=True)
     out = json.loads(p.read_text(encoding="utf-8"))
-    # foreign Stop hook + the non-hook key both survive
-    assert out["hooks"]["Stop"] == [FOREIGN_STOP]
+    # foreign Stop hook survives (Genesys wires Stop now — D-GCW-18 — but never clobbers it)
+    assert FOREIGN_STOP in out["hooks"]["Stop"]
     assert out["permissions"] == {"allow": ["x"]}
     # every Genesys event now wired
     assert all(actions[e] == "added" for e in GENESYS_EVENTS)

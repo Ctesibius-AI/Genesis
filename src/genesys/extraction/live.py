@@ -69,12 +69,16 @@ def build_live(data_root: Path, *, db_path: str | None = None):
 # run_once — single drain pass with doctor re-queue
 # ---------------------------------------------------------------------------
 
-def run_once(data_root: Path, *, now: str) -> list[str]:
+def run_once(data_root: Path, *, now: str, window: int = 5,
+             time_budget_s: float | None = None) -> list[str]:
     """Run doctor re-queue then drain_once with live components (spec §4.14, DR-05c).
 
     Args:
         data_root: Path to the Genesys data directory.
         now:       ISO-8601 timestamp used as the drain clock (ts= argument).
+        window:    max queued entries to drain this pass (D-GCW-5 count bound).
+        time_budget_s: optional wall-clock bound (D-GCW-5); stop taking new entries past it and
+                   defer the rest. Used by the bounded SessionStart drain (D-GCW-18).
 
     Returns:
         List of processed entry IDs.
@@ -95,6 +99,7 @@ def run_once(data_root: Path, *, now: str) -> list[str]:
     # grapher supplies an adjacent-episode corpus (shadow of that check widens harmlessly).
     return drain_once(
         data_root, engine, backend, ts=now, scorer=scorer,
+        window=window, time_budget_s=time_budget_s,
         ladder=LadderConfig(shadow=False),
         rng=random.Random(),
         chart=FalsePassChart(),

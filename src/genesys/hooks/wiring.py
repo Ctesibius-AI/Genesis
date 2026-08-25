@@ -17,7 +17,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-GENESYS_EVENTS: tuple[str, ...] = ("SessionStart", "SessionEnd", "PreCompact")
+# Stop added per D-GCW-18 (crash durability): capture the delta after each turn so an abnormal
+# termination before SessionEnd/PreCompact doesn't lose the session (design §5a "Stop/SessionEnd").
+GENESYS_EVENTS: tuple[str, ...] = ("SessionStart", "Stop", "SessionEnd", "PreCompact")
 _GENESYS_MARK = "genesys.hooks.cli"
 
 

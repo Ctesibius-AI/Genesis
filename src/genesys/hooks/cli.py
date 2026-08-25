@@ -45,6 +45,36 @@ def _resolve_now(hook: dict) -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+# Bounded SessionStart drain (D-GCW-5 / D-GCW-18). Tunable; count + wall-clock bound.
+SESSION_START_DRAIN_WINDOW = 5
+SESSION_START_DRAIN_TIME_BUDGET_S = 20.0
+
+
+def _session_start_drain(data_root: Path, now: str):
+    """Return a zero-arg drain callable for dispatch's SessionStart branch (D-GCW-18 fix 1).
+
+    Drains /save'd content queued in the ledger (D-GCW-18: /save is the sole materialization path).
+    - GUARDED: skips the expensive live engine build entirely when nothing is queued (the common
+      case, since automatic capture is WAL-only) — no cold-load on an idle start.
+    - BOUNDED: count `window` + `time_budget_s` (defer the rest), per D-GCW-5.
+    - EXCEPTION-SAFE: a missing graph extra / API error / LockHeld never breaks SessionStart; a
+      queued item simply stays queued for the next start or `genesys-worker once` (AC-D2 posture).
+    """
+    def _drain() -> None:
+        from genesys.ledger.entry import Extracted  # noqa: PLC0415
+        from genesys.ledger.store import read_all  # noqa: PLC0415
+        try:
+            if not any(e.extracted is Extracted.NO for e in read_all(data_root)):
+                return  # nothing queued → skip (no live engine build)
+            from genesys.extraction.live import run_once  # noqa: PLC0415 — live-only
+            run_once(data_root, now=now, window=SESSION_START_DRAIN_WINDOW,
+                     time_budget_s=SESSION_START_DRAIN_TIME_BUDGET_S)
+        except Exception:  # noqa: BLE001 — never break start; the queue survives for a later drain
+            import logging  # noqa: PLC0415
+            logging.getLogger("genesys.hooks").warning("SessionStart drain skipped (queue preserved)")
+    return _drain
+
+
 def main(argv: list[str] | None = None) -> int:
     """Read a JSON hook payload from stdin, dispatch it, print result as JSON to stdout.
 
@@ -67,7 +97,7 @@ def main(argv: list[str] | None = None) -> int:
         # annotate=False → automatic hooks are append-only (raw WAL safety net only);
         # no queue item is created. Only the manual /save path creates annotations.
         result = dispatch(hook, data_root, now=now, wal=True, cursor_delta=True,
-                          annotate=False)
+                          annotate=False, drain=_session_start_drain(data_root, now))
     except Exception as exc:  # noqa: BLE001
         print(json.dumps({"error": str(exc)}), file=sys.stdout)
         return 1

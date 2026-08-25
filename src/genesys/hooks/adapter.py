@@ -148,19 +148,19 @@ def dispatch(
                 pass
         # D-GCW-15 / AC-CONF1: compute the diary (LLM-only) AND the user-visible confirmation line.
         # A failed read is the DEGRADED "unavailable" path — never breaks start (AC-D2 posture).
-        from genesys.hooks.confirmation import confirmation_line, memory_state
+        from genesys.hooks.confirmation import MemoryState, confirmation_line, memory_state
         try:
             context = session_start_context(data_root, now_iso=now, backend=backend)
-            available, count = memory_state(data_root)
+            state = memory_state(data_root)
         except Exception:  # noqa: BLE001 — down ⇒ unavailable + empty context, start never breaks
-            context, available, count = "", False, 0
+            context, state = "", MemoryState(available=False, sessions=0, unsaved=False)
         return {
             # USER-VISIBLE confirmation line (D-GCW-15 / AC-CONF1). `systemMessage` is the field CC
             # shows the user at SessionStart (CLI prints "SessionStart:startup says: …"; verified
             # against v2.1.158, 2026-08-26). ⚠ Known CC bug #15344: the VS Code extension ignores
             # SessionStart systemMessage — renders in the CLI, not VS Code. Plain stdout is NOT
             # user-visible at SessionStart here (eye-tested false).
-            "systemMessage": confirmation_line(available=available, count=count),
+            "systemMessage": confirmation_line(state),
             "hookSpecificOutput": {
                 "hookEventName": "SessionStart",
                 "additionalContext": context,  # LLM-only diary content (never shown to the user)

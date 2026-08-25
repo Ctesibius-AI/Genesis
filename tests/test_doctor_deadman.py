@@ -40,7 +40,7 @@ def test_wiring_status_is_included_when_settings_path_given(tmp_path: Path):
     settings = tmp_path / "settings.json"
     settings.write_text(json.dumps({"hooks": {}}), encoding="utf-8")
     r = doctor_deadman(tmp_path, now=NOW, settings_path=settings)
-    assert r.wired == {"SessionStart": False, "SessionEnd": False, "PreCompact": False}
+    assert r.wired == {"SessionStart": False, "Stop": False, "SessionEnd": False, "PreCompact": False}
 
 
 def test_no_settings_path_leaves_wired_none(tmp_path: Path):
