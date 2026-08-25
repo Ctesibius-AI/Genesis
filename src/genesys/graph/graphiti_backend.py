@@ -196,7 +196,8 @@ class GraphitiCoreClient:
             # ontology so graphiti classifies into typed nodes + the 8 named relations (not a
             # generic Entity/RELATES_TO blob). The edge_type_map names double as the recall
             # allow-list (name once — graph.ontology is the single source).
-            from genesys.graph.ontology import build_edge_type_map, build_entity_types
+            from genesys.graph.ontology import (
+                build_edge_type_map, build_edge_types, build_entity_types)
             result = await self._g.add_episode(
                 name=name,
                 episode_body=body,
@@ -206,6 +207,7 @@ class GraphitiCoreClient:
                 group_id=self._group_id,
                 previous_episode_uuids=[ep.uuid for ep in prev],
                 entity_types=build_entity_types(),
+                edge_types=build_edge_types(),      # the MODELS — constrain names to the 8 relations
                 edge_type_map=build_edge_type_map(),
             )
             # Store name → graphiti episode UUID so edges_for_episode can look it up.

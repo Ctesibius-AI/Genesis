@@ -59,3 +59,16 @@ def build_edge_type_map() -> dict:  # pragma: no cover - live graph path
             for t in targets:
                 mapping.setdefault((s, t), []).append(rel)
     return mapping
+
+
+def build_edge_types() -> dict:  # pragma: no cover - live graph path
+    """Build graphiti-core `edge_types` (relation name -> pydantic BaseModel).
+
+    CRITICAL (live-verified 2026-08-26): `edge_type_map` alone is only a HINT — without the edge
+    MODELS graphiti's extraction invents variant names (ASSIGNED_TASK_TO, IS_ABOUT, CONTAINS…),
+    which the closed recall allow-list then over-excludes (silent memory loss). Passing `edge_types`
+    constrains extraction to EXACTLY the 8 named relations, so the emitted names match the allow-list.
+    """
+    from pydantic import BaseModel, create_model
+
+    return {rel: create_model(rel, __base__=BaseModel) for rel in EDGE_DEFINITIONS}
