@@ -3,9 +3,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.ledger.entry import Extracted, LedgerEntry, Links, Provenance
-from genesys.ledger.store import append
-from genesys.save_cursor import entry_cursor, latest_span_end_for_session
+from genesis.ledger.entry import Extracted, LedgerEntry, Links, Provenance
+from genesis.ledger.store import append
+from genesis.save_cursor import entry_cursor, latest_span_end_for_session
 
 
 def _entry(eid, ts, session_id, *, span_end="") -> LedgerEntry:

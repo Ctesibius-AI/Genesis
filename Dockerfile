@@ -1,7 +1,7 @@
-# Genesys dev sandbox — an isolated Python 3.12 runtime.
+# Genesis dev sandbox — an isolated Python 3.12 runtime.
 #
-# Purpose: build/run/test Genesys inside a container so nothing installs on the
-# host Mac (which only has system Python 3.9; Genesys requires >=3.12).
+# Purpose: build/run/test Genesis inside a container so nothing installs on the
+# host Mac (which only has system Python 3.9; Genesis requires >=3.12).
 #
 # Lock-safety: this image contains ONLY a toolchain (uv + pytest). It never
 # activates live capture and never deploys. Isolation is enforced at run time by
@@ -24,10 +24,10 @@ RUN pip install --no-cache-dir uv \
  && uv pip install "pytest>=8"
 
 # Non-root user (uid 1000). Source is bind-mounted at run time and read from /workspace.
-RUN useradd --create-home --uid 1000 genesys \
- && chown -R genesys:genesys "$VIRTUAL_ENV"
+RUN useradd --create-home --uid 1000 genesis \
+ && chown -R genesis:genesis "$VIRTUAL_ENV"
 WORKDIR /workspace
-USER genesys
+USER genesis
 
 # Keep the container available for `exec`/`run` shells. Overridden by `sandbox test`.
 CMD ["sleep", "infinity"]

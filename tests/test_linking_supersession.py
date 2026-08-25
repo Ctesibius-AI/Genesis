@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from genesys.graph.engine import FakeGraph, GraphEdge
-from genesys.ledger.entry import Extracted, LedgerEntry, Links, Provenance
-from genesys.linking.supersession import apply_supersession
+from genesis.graph.engine import FakeGraph, GraphEdge
+from genesis.ledger.entry import Extracted, LedgerEntry, Links, Provenance
+from genesis.linking.supersession import apply_supersession
 
 
 def _entry(eid, ts):

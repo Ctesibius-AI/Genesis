@@ -1,7 +1,7 @@
 [project]
-name = "genesys"
+name = "genesis"
 version = "0.0.1"
-description = "Genesys memory architecture — Step 0: DR-37 continuous capture mirror + DR-38 secret hygiene / redaction."
+description = "Genesis memory architecture — Step 0: DR-37 continuous capture mirror + DR-38 secret hygiene / redaction."
 requires-python = ">=3.12"
 # Runtime deps deliberately minimal. Step 0 is file I/O + deterministic scrubbing:
 # no graph engine (graphiti/falkordb), no LLM, no network. Stdlib only.
@@ -10,19 +10,19 @@ dependencies = []
 [project.scripts]
 # Operates ONLY on provided fixtures/inputs. Does NOT install or activate any live
 # Claude Code hook — activation is a separate deploy step (owner go-ahead required).
-genesys-setup = "genesys.setup.cli:main"
-genesys-capture = "genesys.capture.cli:main"
-genesys-save = "genesys.ledger.cli:main"
-genesys-diary = "genesys.diary.cli:main"
-genesys-drain = "genesys.extraction.cli:main"
-genesys-console = "genesys.console.cli:main"
-genesys-tasks = "genesys.tasks.cli:main"
-genesys-hook = "genesys.hooks.cli:main"
-genesys-worker = "genesys.extraction.worker_cli:main"
-genesys-backfill = "genesys.backfill.cli:main"
-genesys-save-moment = "genesys.save_moment:main"
-genesys-install = "genesys.install.cli:main"
-genesys-recall-mcp = "genesys.recall.mcp_server:main"
+genesis-setup = "genesis.setup.cli:main"
+genesis-capture = "genesis.capture.cli:main"
+genesis-save = "genesis.ledger.cli:main"
+genesis-diary = "genesis.diary.cli:main"
+genesis-drain = "genesis.extraction.cli:main"
+genesis-console = "genesis.console.cli:main"
+genesis-tasks = "genesis.tasks.cli:main"
+genesis-hook = "genesis.hooks.cli:main"
+genesis-worker = "genesis.extraction.worker_cli:main"
+genesis-backfill = "genesis.backfill.cli:main"
+genesis-save-moment = "genesis.save_moment:main"
+genesis-install = "genesis.install.cli:main"
+genesis-recall-mcp = "genesis.recall.mcp_server:main"
 
 [project.optional-dependencies]
 dev = [
@@ -57,7 +57,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/genesys"]
+packages = ["src/genesis"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

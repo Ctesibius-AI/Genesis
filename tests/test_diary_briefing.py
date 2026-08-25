@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from genesys.diary.briefing import Briefing, enforce_budget, estimate_tokens, parse_briefing
+from genesis.diary.briefing import Briefing, enforce_budget, estimate_tokens, parse_briefing
 
 
 def test_estimate_tokens_is_chars_over_four_rounded_up():

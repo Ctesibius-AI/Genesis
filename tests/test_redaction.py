@@ -7,16 +7,16 @@ import hmac
 
 import pytest
 
-from genesys.config import ConfigError, HMAC_KEY_ENV
-from genesys.scrub.cascade import (
+from genesis.config import ConfigError, HMAC_KEY_ENV
+from genesis.scrub.cascade import (
     CascadeNotImplementedError,
     CascadeRequest,
     CascadeStub,
 )
-from genesys.scrub.redaction import redact_in_place, tombstone_hash
+from genesis.scrub.redaction import redact_in_place, tombstone_hash
 
 
-LOCAL_KEY = b"test-local-genesys-key"
+LOCAL_KEY = b"test-local-genesis-key"
 
 
 # --------------------------------------------------------------------------- #

@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.diary.backend import FakeBackend
-from genesys.diary.compiler import DIARY_PROMPT, compile_diary
-from genesys.ledger.entry import Extracted, LedgerEntry, Links, Provenance
-from genesys.ledger.store import append
+from genesis.diary.backend import FakeBackend
+from genesis.diary.compiler import DIARY_PROMPT, compile_diary
+from genesis.ledger.entry import Extracted, LedgerEntry, Links, Provenance
+from genesis.ledger.store import append
 
 
 def _seed(tmp_path: Path):

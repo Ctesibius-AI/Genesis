@@ -6,10 +6,10 @@ the engine); (2) recall never serves an invalidated (superseded) edge as current
 """
 from __future__ import annotations
 
-from genesys.graph.engine import FakeGraph, GraphEdge, Verdict
-from genesys.linking.relatedness import FakeRelatednessScorer
-from genesys.recall.service import RecallService
-from genesys.recall.tier import Tier
+from genesis.graph.engine import FakeGraph, GraphEdge, Verdict
+from genesis.linking.relatedness import FakeRelatednessScorer
+from genesis.recall.service import RecallService
+from genesis.recall.tier import Tier
 
 
 def test_invalidation_subtracted_post_commit():

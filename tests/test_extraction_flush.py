@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from genesys.extraction.flush import should_flush
+from genesis.extraction.flush import should_flush
 
 
 def test_window_reached_is_hard_flush():

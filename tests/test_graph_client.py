@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from genesys.graph.client import (
+from genesis.graph.client import (
     AddEpisodeResults,
     ClientEdge,
     CommitMarker,

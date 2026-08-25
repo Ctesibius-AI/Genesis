@@ -5,14 +5,14 @@ be reachable only from the real DEGRADED down-branch (AC-CONF1 literalism; the l
 """
 from __future__ import annotations
 
-from genesys.graph.engine import FakeGraph
-from genesys.linking.relatedness import FakeRelatednessScorer
-from genesys.recall.daemon import RecallDaemon
-from genesys.recall.scorer import EmptyCause
-from genesys.recall.search_backend import FakeRecallSearch
-from genesys.recall.service import RecallService
-from genesys.recall.tier import Tier
-from genesys.recall.tool import format_for_injection
+from genesis.graph.engine import FakeGraph
+from genesis.linking.relatedness import FakeRelatednessScorer
+from genesis.recall.daemon import RecallDaemon
+from genesis.recall.scorer import EmptyCause
+from genesis.recall.search_backend import FakeRecallSearch
+from genesis.recall.service import RecallService
+from genesis.recall.tier import Tier
+from genesis.recall.tool import format_for_injection
 
 
 def _daemon(search):

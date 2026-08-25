@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import pytest
 
-from genesys.graph.engine import FakeGraph, GraphEdge, Verdict
-from genesys.linking.relatedness import FakeRelatednessScorer
-from genesys.recall.daemon import RecallDaemon, build_recall_daemon
-from genesys.recall.search_backend import FakeRecallSearch
-from genesys.recall.service import RecallService
-from genesys.recall.tier import Tier
+from genesis.graph.engine import FakeGraph, GraphEdge, Verdict
+from genesis.linking.relatedness import FakeRelatednessScorer
+from genesis.recall.daemon import RecallDaemon, build_recall_daemon
+from genesis.recall.search_backend import FakeRecallSearch
+from genesis.recall.service import RecallService
+from genesis.recall.tier import Tier
 
 
 def _daemon(*, search=None, engine=None):

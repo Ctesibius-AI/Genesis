@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from genesys.graph.engine import FakeGraph, GraphEdge
-from genesys.supervisor.detection import detect
+from genesis.graph.engine import FakeGraph, GraphEdge
+from genesis.supervisor.detection import detect
 
 
 def test_detect_finds_created_and_invalidated():

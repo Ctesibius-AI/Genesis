@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from genesys.diary.backend import SECTION_HEADERS, FakeBackend
-from genesys.diary.inputs import DiaryInputs, LedgerItem
+from genesis.diary.backend import SECTION_HEADERS, FakeBackend
+from genesis.diary.inputs import DiaryInputs, LedgerItem
 
 
 def test_headers_are_the_fixed_sections_in_order():

@@ -1,7 +1,7 @@
-# Genesys dev sandbox
+# Genesis dev sandbox
 
-An isolated Python 3.12 container for building/running/testing Genesys **without
-installing anything on the host Mac** (which only has system Python 3.9; Genesys
+An isolated Python 3.12 container for building/running/testing Genesis **without
+installing anything on the host Mac** (which only has system Python 3.9; Genesis
 requires >=3.12).
 
 ## Use it

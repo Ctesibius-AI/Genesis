@@ -6,11 +6,11 @@ from __future__ import annotations
 
 import pytest
 
-from genesys.workers.backend import FakeLLMBackend, safe_json_object
-from genesys.workers.class_auditor import class_audit, fragment_merge
-from genesys.workers.judge import invalidation_judge
-from genesys.workers.screen import screen
-from genesys.workers.verifier import verify
+from genesis.workers.backend import FakeLLMBackend, safe_json_object
+from genesis.workers.class_auditor import class_audit, fragment_merge
+from genesis.workers.judge import invalidation_judge
+from genesis.workers.screen import screen
+from genesis.workers.verifier import verify
 
 BAD_REPLIES = ["", "   ", "not json at all", "```json\n\n```", "[1, 2, 3]"]
 

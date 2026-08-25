@@ -7,10 +7,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.diary.backend import FakeBackend
-from genesys.diary.hooks import session_start_context
-from genesys.ledger.entry import Extracted, LedgerEntry, Links, Provenance
-from genesys.ledger.store import append
+from genesis.diary.backend import FakeBackend
+from genesis.diary.hooks import session_start_context
+from genesis.ledger.entry import Extracted, LedgerEntry, Links, Provenance
+from genesis.ledger.store import append
 
 NOW = "2026-08-17T12:00:00+00:00"
 

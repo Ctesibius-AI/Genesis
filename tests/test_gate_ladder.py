@@ -4,12 +4,12 @@ from __future__ import annotations
 import random
 from pathlib import Path
 
-from genesys.graph.engine import FakeGraph, GraphEdge
-from genesys.inspection.audit import FalsePassChart
-from genesys.inspection.ladder import LadderConfig
-from genesys.journal.journal import read_journal
-from genesys.supervisor.gate import run_gate
-from genesys.workers.backend import FakeLLMBackend
+from genesis.graph.engine import FakeGraph, GraphEdge
+from genesis.inspection.audit import FalsePassChart
+from genesis.inspection.ladder import LadderConfig
+from genesis.journal.journal import read_journal
+from genesis.supervisor.gate import run_gate
+from genesis.workers.backend import FakeLLMBackend
 
 
 def test_ladder_none_keeps_the_built_jot_gate(tmp_path: Path):

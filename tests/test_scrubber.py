@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from genesys.scrub.scrubber import (
+from genesis.scrub.scrubber import (
     make_placeholder,
     path_is_sensitive,
     scrub_text,
@@ -102,7 +102,7 @@ def test_shannon_entropy_monotonic():
 
 
 # --------------------------------------------------------------------------- #
-# R3 entropy allowlist — must NOT redact git SHAs / Genesys IDs / tombstone hashes #
+# R3 entropy allowlist — must NOT redact git SHAs / Genesis IDs / tombstone hashes #
 # --------------------------------------------------------------------------- #
 
 def test_r3_git_sha_not_redacted():
@@ -113,7 +113,7 @@ def test_r3_git_sha_not_redacted():
     assert sha in res.text
 
 
-def test_r3_genesys_deterministic_id_not_redacted():
+def test_r3_genesis_deterministic_id_not_redacted():
     gid = "gen-20260815-001"
     res = scrub_text(f"episode {gid} was captured")
     assert not res.redacted

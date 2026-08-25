@@ -7,7 +7,7 @@ no persona data hooks.
 
 from __future__ import annotations
 
-from genesys.console.dashboard import DASHBOARD_HTML
+from genesis.console.dashboard import DASHBOARD_HTML
 
 
 def test_dashboard_has_no_persona_surface_container():

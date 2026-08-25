@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.ledger.entry import LedgerEntry, Links, Provenance
-from genesys.ledger.store import append, read_since
+from genesis.ledger.entry import LedgerEntry, Links, Provenance
+from genesis.ledger.store import append, read_since
 
 
 def _entry(eid: str, ts: str) -> LedgerEntry:

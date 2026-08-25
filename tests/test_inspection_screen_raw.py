@@ -5,10 +5,10 @@ The built workers.screen.screen / SCREEN_PROMPT are untouched (a separate test g
 """
 from __future__ import annotations
 
-from genesys.inspection.screen_raw import SCREEN_RAW_PROMPT, screen_raw
-from genesys.inspection.tier0 import Tier0Hint
-from genesys.workers.backend import TIER_SONNET, FakeLLMBackend
-from genesys.workers.screen import SCREEN_PROMPT, ScreenResult
+from genesis.inspection.screen_raw import SCREEN_RAW_PROMPT, screen_raw
+from genesis.inspection.tier0 import Tier0Hint
+from genesis.workers.backend import TIER_SONNET, FakeLLMBackend
+from genesis.workers.screen import SCREEN_PROMPT, ScreenResult
 
 
 def test_prompt_grounds_on_the_raw_window_not_the_jot():
@@ -31,9 +31,9 @@ def test_screen_raw_passes_the_raw_window_and_manifest_on_sonnet():
 def test_tier0_hints_are_attached_to_the_prompt():
     b = FakeLLMBackend('{"verdict": "FLAG", "flags": [{"code": "S1", "artifact": "e1"}]}')
     r = screen_raw(b, window="w", manifest="e1: a fact",
-                   hints=(Tier0Hint(edge_id="e1", entity="Genesys"),))
+                   hints=(Tier0Hint(edge_id="e1", entity="Genesis"),))
     assert r.verdict == "FLAG"
-    assert "Genesys" in b.last["user"]                        # the soft hint rode along
+    assert "Genesis" in b.last["user"]                        # the soft hint rode along
 
 
 def test_fail_closed_on_garbage_reply_defaults_pass():

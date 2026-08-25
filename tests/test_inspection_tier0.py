@@ -4,8 +4,8 @@ Pure/offline, NO LLM. A Tier 0 hit NEVER auto-quarantines.
 """
 from __future__ import annotations
 
-from genesys.graph.engine import GraphEdge
-from genesys.inspection.tier0 import (
+from genesis.graph.engine import GraphEdge
+from genesis.inspection.tier0 import (
     Tier0Flag,
     Tier0Hint,
     Tier0Result,
@@ -60,9 +60,9 @@ def test_attribution_to_a_participant_passes():
 def test_entity_not_verbatim_is_a_soft_hint_never_a_flag():
     created = [_edge("e3", "the project ships Friday")]
     r = tier0_check(created, window="he said it ships Friday", ride_along="",
-                    speakers=SPEAKERS, entities={"e3": ["Genesys"]})
+                    speakers=SPEAKERS, entities={"e3": ["Genesis"]})
     assert r.hard_flags == []                       # never auto-routes
-    assert r.hints == [Tier0Hint(edge_id="e3", entity="Genesys")]
+    assert r.hints == [Tier0Hint(edge_id="e3", entity="Genesis")]
 
 
 def test_zero_facts_on_a_nontrivial_window_trips_the_completeness_wire():
@@ -90,18 +90,18 @@ def test_result_never_exposes_a_quarantine_path():
 # ---------------------------------------------------------------------------
 
 def test_entity_substring_in_corpus_fires_hint():
-    # "Gene" is a substring of "Genesys" but NOT a standalone word -> hint fires (missed verbatim).
+    # "Gene" is a substring of "Genesis" but NOT a standalone word -> hint fires (missed verbatim).
     created = [_edge("e4", "Gene will review the draft")]
-    r = tier0_check(created, window="Genesys will review the draft", ride_along="",
+    r = tier0_check(created, window="Genesis will review the draft", ride_along="",
                     speakers=SPEAKERS, entities={"e4": ["Gene"]})
     assert r.hints == [Tier0Hint(edge_id="e4", entity="Gene")]
 
 
 def test_entity_whole_word_in_corpus_no_hint():
-    # "Genesys" appears as a whole word in the corpus -> no hint.
-    created = [_edge("e5", "Genesys will review the draft")]
-    r = tier0_check(created, window="Genesys will review the draft", ride_along="",
-                    speakers=SPEAKERS, entities={"e5": ["Genesys"]})
+    # "Genesis" appears as a whole word in the corpus -> no hint.
+    created = [_edge("e5", "Genesis will review the draft")]
+    r = tier0_check(created, window="Genesis will review the draft", ride_along="",
+                    speakers=SPEAKERS, entities={"e5": ["Genesis"]})
     assert r.hints == []
 
 

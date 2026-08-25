@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from genesys.workers.backend import FakeLLMBackend
-from genesys.workers.verifier import VERIFIER_PROMPT, VerifierResult, verify
+from genesis.workers.backend import FakeLLMBackend
+from genesis.workers.verifier import VERIFIER_PROMPT, VerifierResult, verify
 
 
 def test_prompt_is_verbatim_c33_anchors():

@@ -7,8 +7,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.extraction.lock import LockHeld
-from genesys.hooks.adapter import dispatch
+from genesis.extraction.lock import LockHeld
+from genesis.hooks.adapter import dispatch
 
 NOW = "2026-08-26T10:00:00+00:00"
 HOOK = {"hook_event_name": "SessionStart"}

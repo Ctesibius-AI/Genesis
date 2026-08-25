@@ -12,8 +12,8 @@ from pathlib import Path
 
 import pytest
 
-from genesys.extraction.lock import LockHeld, clear_if_dead, single_instance
-from genesys.journal.journal import read_journal
+from genesis.extraction.lock import LockHeld, clear_if_dead, single_instance
+from genesis.journal.journal import read_journal
 
 TS = "2026-08-26T10:00:00+00:00"
 

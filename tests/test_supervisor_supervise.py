@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.graph.engine import FakeGraph, GraphEdge, Verdict
-from genesys.supervisor.supervise import supervise_commit
-from genesys.workers.backend import FakeLLMBackend
+from genesis.graph.engine import FakeGraph, GraphEdge, Verdict
+from genesis.supervisor.supervise import supervise_commit
+from genesis.workers.backend import FakeLLMBackend
 
 
 def test_supervise_commit_full_sequence(tmp_path: Path):

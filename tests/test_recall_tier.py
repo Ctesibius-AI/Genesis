@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from genesys.recall.tier import Retrieval, Tier, depth_for, reads_graph
+from genesis.recall.tier import Retrieval, Tier, depth_for, reads_graph
 
 
 def test_four_tiers_map_to_their_retrieval_depth():

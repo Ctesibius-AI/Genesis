@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pytest
 
-from genesys.install.platform import DOCKER, STDIO_LITE, PlatformError, PlatformFacts, select_profile
+from genesis.install.platform import DOCKER, STDIO_LITE, PlatformError, PlatformFacts, select_profile
 
 SUPPORTED = PlatformFacts(system="Darwin", macos_major=15, arch="arm64", py=(3, 12), has_libomp=True)
 

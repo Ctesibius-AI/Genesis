@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from genesys.recall.tier import Tier
-from genesys.recall.touch import Touch, detect_touch, is_trivial
+from genesis.recall.tier import Tier
+from genesis.recall.touch import Touch, detect_touch, is_trivial
 
 
 @dataclass

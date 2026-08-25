@@ -22,13 +22,13 @@ from pathlib import Path
 
 import pytest
 
-from genesys.hooks.adapter import dispatch
-from genesys.ledger.store import read_all
-from genesys.save_moment import save_moment
-from genesys.wal.annotate import is_annotation
-from genesys.wal.record import WalRecord
-from genesys.wal.store import read_segment
-from genesys.wal.window import read_window
+from genesis.hooks.adapter import dispatch
+from genesis.ledger.store import read_all
+from genesis.save_moment import save_moment
+from genesis.wal.annotate import is_annotation
+from genesis.wal.record import WalRecord
+from genesis.wal.store import read_segment
+from genesis.wal.window import read_window
 
 SESSION_ID = "session-capture-once"
 NOW1 = "2026-08-19T10:00:00+00:00"
@@ -263,7 +263,7 @@ def test_compaction_shrink_new_content_not_lost(tmp_path: Path) -> None:
     )
 
     # Confirm cursor is 6
-    from genesys.wal.write_cursor import read_captured_count
+    from genesis.wal.write_cursor import read_captured_count
     assert read_captured_count(data_root, "compact-session") == len(records_before)
 
     # Step 2: compaction rewrites the transcript to 3 NEW records (smaller, different content)
@@ -310,7 +310,7 @@ def test_stale_cursor_self_heals(tmp_path: Path) -> None:
     transcript = tmp_path / "stale.jsonl"
 
     # Manually write a stale cursor that exceeds the actual transcript
-    from genesys.wal.write_cursor import write_captured_count
+    from genesis.wal.write_cursor import write_captured_count
     write_captured_count(data_root, "stale-session", 999)
 
     # Write a transcript with actual content
@@ -335,7 +335,7 @@ def test_stale_cursor_self_heals(tmp_path: Path) -> None:
         f"Stale cursor (999) should not permanently block capture.\nWAL: {all_wal_text!r}"
     )
 
-    from genesys.wal.write_cursor import read_captured_count
+    from genesis.wal.write_cursor import read_captured_count
     assert read_captured_count(data_root, "stale-session") == len(records), (
         f"Cursor must self-correct to {len(records)}, "
         f"got {read_captured_count(data_root, 'stale-session')}"

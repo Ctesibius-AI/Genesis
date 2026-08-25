@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.graph.engine import FakeGraph, GraphEdge
-from genesys.supervisor.judgment import judge_invalidations
-from genesys.workers.backend import FakeLLMBackend
+from genesis.graph.engine import FakeGraph, GraphEdge
+from genesis.supervisor.judgment import judge_invalidations
+from genesis.workers.backend import FakeLLMBackend
 
 
 def test_revert_recommendation_reopens_and_returns_id(tmp_path: Path):

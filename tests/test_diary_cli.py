@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.config import DIARY_TOKEN_BUDGET, DIARY_WINDOW_DAYS, RECENT_SESSIONS_DEPTH
-from genesys.diary.cli import main
-from genesys.ledger.entry import Extracted, LedgerEntry, Links, Provenance
-from genesys.ledger.store import append
+from genesis.config import DIARY_TOKEN_BUDGET, DIARY_WINDOW_DAYS, RECENT_SESSIONS_DEPTH
+from genesis.diary.cli import main
+from genesis.ledger.entry import Extracted, LedgerEntry, Links, Provenance
+from genesis.ledger.store import append
 
 
 def _seed(data: Path):

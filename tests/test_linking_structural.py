@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from genesys.ledger.entry import Extracted, LedgerEntry, Links, Provenance
-from genesys.ledger.store import append, read_all
-from genesys.linking.structural import apply_structural_links
+from genesis.ledger.entry import Extracted, LedgerEntry, Links, Provenance
+from genesis.ledger.store import append, read_all
+from genesis.linking.structural import apply_structural_links
 
 
 def _entry(eid, ts, session="s1"):

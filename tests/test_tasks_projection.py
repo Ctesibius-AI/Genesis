@@ -1,8 +1,8 @@
 """Test task projection (tests/test_tasks_projection.py)."""
 from __future__ import annotations
 
-from genesys.tasks.events import TaskEvent
-from genesys.tasks.projection import fold_tasks
+from genesis.tasks.events import TaskEvent
+from genesis.tasks.projection import fold_tasks
 
 
 def _ev(event, tid, ts, **kw):

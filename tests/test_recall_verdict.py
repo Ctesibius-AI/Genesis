@@ -2,8 +2,8 @@
 """DR-33 verdict-aware serving over a GraphEdge (spec §4.7a, §4.7b)."""
 from __future__ import annotations
 
-from genesys.graph.engine import GraphEdge, Verdict
-from genesys.recall.verdict import is_servable, servable_edges, serving_label
+from genesis.graph.engine import GraphEdge, Verdict
+from genesis.recall.verdict import is_servable, servable_edges, serving_label
 
 
 def _edge(eid, verdict=Verdict.PROVISIONAL, contested=False):

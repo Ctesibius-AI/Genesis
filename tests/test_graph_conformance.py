@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from genesys.graph.engine import FakeGraph, GraphEdge, Verdict
+from genesis.graph.engine import FakeGraph, GraphEdge, Verdict
 
 
 def _build_fake():
@@ -23,8 +23,8 @@ def _build_fake():
 
 
 def _build_adapter():
-    from genesys.graph.adapter import GraphitiEngine
-    from genesys.graph.client import ClientEdge, CommitMarker, FakeGraphitiClient
+    from genesis.graph.adapter import GraphitiEngine
+    from genesis.graph.client import ClientEdge, CommitMarker, FakeGraphitiClient
 
     c = FakeGraphitiClient()
     clock = iter(["2026-08-17T09:59:00Z", "2026-08-17T10:01:00Z"])

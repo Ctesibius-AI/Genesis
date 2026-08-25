@@ -13,7 +13,7 @@ __pycache__/
 build/
 dist/
 
-# Local Genesys HMAC key material / secrets — never commit (DR-38 R4)
+# Local Genesis HMAC key material / secrets — never commit (DR-38 R4)
 *.key
 secrets/
 .gstack/

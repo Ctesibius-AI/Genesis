@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Genesys dev sandbox — your terminal into the isolated Python 3.12 container.
+# Genesis dev sandbox — your terminal into the isolated Python 3.12 container.
 #
 #   ./sandbox build        build the image
 #   ./sandbox shell        drop into a shell at /workspace (offline, non-root)
@@ -17,8 +17,8 @@ usage() { echo "usage: ./sandbox {build|shell|test|status|down}"; }
 cmd="${1:-}"
 case "$cmd" in
   build)  docker compose build ;;
-  shell)  docker compose run --rm genesys bash ;;
-  test)   docker compose run --rm genesys pytest -p no:cacheprovider "${@:2}" ;;
+  shell)  docker compose run --rm genesis bash ;;
+  test)   docker compose run --rm genesis pytest -p no:cacheprovider "${@:2}" ;;
   status) docker compose ps ;;
   down)   docker compose down ;;
   ""|-h|--help|help) usage ;;

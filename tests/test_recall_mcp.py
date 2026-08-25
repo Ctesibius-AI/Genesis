@@ -5,14 +5,14 @@ down (DEGRADED) from queue-lag (PENDING) — never a bare [].
 """
 from __future__ import annotations
 
-from genesys.graph.engine import FakeGraph, GraphEdge, Verdict
-from genesys.linking.relatedness import FakeRelatednessScorer
-from genesys.recall.daemon import RecallDaemon
-from genesys.recall.mcp_server import recall_response
-from genesys.recall.scorer import EmptyCause
-from genesys.recall.search_backend import FakeRecallSearch
-from genesys.recall.service import RecallService
-from genesys.recall.tier import Tier
+from genesis.graph.engine import FakeGraph, GraphEdge, Verdict
+from genesis.linking.relatedness import FakeRelatednessScorer
+from genesis.recall.daemon import RecallDaemon
+from genesis.recall.mcp_server import recall_response
+from genesis.recall.scorer import EmptyCause
+from genesis.recall.search_backend import FakeRecallSearch
+from genesis.recall.service import RecallService
+from genesis.recall.tier import Tier
 
 
 def _daemon(search):

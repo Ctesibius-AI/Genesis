@@ -4,12 +4,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from genesys.backfill.cli import main
-from genesys.ids import episodes_dir
-from genesys.ledger.store import read_all
-from genesys.wal.annotate import is_annotation
-from genesys.wal.record import WalRecord
-from genesys.wal.store import read_segment
+from genesis.backfill.cli import main
+from genesis.ids import episodes_dir
+from genesis.ledger.store import read_all
+from genesis.wal.annotate import is_annotation
+from genesis.wal.record import WalRecord
+from genesis.wal.store import read_segment
 
 
 def _session(tmp_path: Path, name: str, text: str) -> Path:

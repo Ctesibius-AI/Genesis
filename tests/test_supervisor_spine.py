@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.graph.engine import FakeGraph, GraphEdge, Verdict
-from genesys.journal.journal import read_journal
-from genesys.supervisor.spine import inspect_commit
+from genesis.graph.engine import FakeGraph, GraphEdge, Verdict
+from genesis.journal.journal import read_journal
+from genesis.supervisor.spine import inspect_commit
 
 
 def test_inspect_sets_provisional_on_created_and_returns_detection(tmp_path: Path):

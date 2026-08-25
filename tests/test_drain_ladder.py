@@ -4,14 +4,14 @@ from __future__ import annotations
 import random
 from pathlib import Path
 
-from genesys.episode.ownedfile import EpisodeHeader, write_episode_file
-from genesys.extraction.drain import drain_once
-from genesys.graph.engine import FakeGraph, GraphEdge
-from genesys.inspection.audit import FalsePassChart
-from genesys.inspection.ladder import LadderConfig
-from genesys.ledger.entry import Extracted, LedgerEntry, Links, Provenance
-from genesys.ledger.store import append, read_all
-from genesys.workers.backend import FakeLLMBackend
+from genesis.episode.ownedfile import EpisodeHeader, write_episode_file
+from genesis.extraction.drain import drain_once
+from genesis.graph.engine import FakeGraph, GraphEdge
+from genesis.inspection.audit import FalsePassChart
+from genesis.inspection.ladder import LadderConfig
+from genesis.ledger.entry import Extracted, LedgerEntry, Links, Provenance
+from genesis.ledger.store import append, read_all
+from genesis.workers.backend import FakeLLMBackend
 
 
 def _seed_entry(data_root: Path, eid: str = "EP-2026-08-18.0001",
@@ -140,7 +140,7 @@ def test_drain_ride_along_for_callable(tmp_path: Path):
 
 def test_supervise_commit_ladder_none_unchanged(tmp_path: Path):
     """supervise_commit(ladder=None) => identical to today's built path."""
-    from genesys.supervisor.supervise import supervise_commit
+    from genesis.supervisor.supervise import supervise_commit
     g = FakeGraph()
     g.script_episode("EP-1", creates=[GraphEdge("e1", "a fact", ["EP-1"])],
                      at="2026-08-18T10:00:00+00:00")
@@ -157,7 +157,7 @@ def test_supervise_commit_ladder_none_unchanged(tmp_path: Path):
 
 def test_supervise_commit_ladder_routes_to_run_gate(tmp_path: Path):
     """supervise_commit(ladder=LadderConfig(...)) => run_gate takes the ladder path."""
-    from genesys.supervisor.supervise import supervise_commit
+    from genesis.supervisor.supervise import supervise_commit
     g = FakeGraph()
     g.script_episode("EP-1", creates=[GraphEdge("e1", "a fact", ["EP-1"])],
                      at="2026-08-18T10:00:00+00:00")

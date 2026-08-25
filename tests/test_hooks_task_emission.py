@@ -13,15 +13,15 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from genesys.hooks.adapter import dispatch
-from genesys.hooks.translate import cc_transcript_to_events
-from genesys.tasks.events import read_events
+from genesis.hooks.adapter import dispatch
+from genesis.hooks.translate import cc_transcript_to_events
+from genesis.tasks.events import read_events
 
 NOW = "2026-08-17T12:00:00+00:00"
 
 
 def _transcript_with_tasks(tmp_path: Path) -> Path:
-    """A transcript that also carries the documented Genesys task-record intake shape
+    """A transcript that also carries the documented Genesis task-record intake shape
     (same shape as tests/fixtures/sample_transcript.json)."""
     records = [
         {"type": "user", "message": {"role": "user", "content": "let's ship PHR008"}},

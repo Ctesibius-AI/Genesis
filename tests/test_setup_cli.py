@@ -5,8 +5,8 @@ import json
 
 import pytest
 
-from genesys import config
-from genesys.setup import cli
+from genesis import config
+from genesis.setup import cli
 
 
 @pytest.fixture(autouse=True)

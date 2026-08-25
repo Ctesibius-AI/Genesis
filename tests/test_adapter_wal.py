@@ -4,13 +4,13 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from genesys.hooks.adapter import dispatch
-from genesys.ids import episodes_dir
-from genesys.ledger.store import read_all
-from genesys.wal.annotate import is_annotation
-from genesys.wal.record import WalRecord
-from genesys.wal.store import read_segment
-from genesys.wal.window import read_window
+from genesis.hooks.adapter import dispatch
+from genesis.ids import episodes_dir
+from genesis.ledger.store import read_all
+from genesis.wal.annotate import is_annotation
+from genesis.wal.record import WalRecord
+from genesis.wal.store import read_segment
+from genesis.wal.window import read_window
 
 NOW1 = "2026-08-18T11:00:00+00:00"
 NOW2 = "2026-08-18T12:00:00+00:00"
@@ -28,7 +28,7 @@ def _hook(event, transcript, session_id="s1"):
 
 
 def test_wal_path_annotates_and_writes_no_episode_copy(tmp_path: Path):
-    t = _transcript(tmp_path, "t1.jsonl", "hello genesys")
+    t = _transcript(tmp_path, "t1.jsonl", "hello genesis")
     r = dispatch(_hook("Stop", t), tmp_path, now=NOW1, wal=True)
     assert "entry_id" in r
     e = read_all(tmp_path)[0]

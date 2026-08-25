@@ -4,10 +4,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from genesys.console.model import console_model
-from genesys.console.views import DeadmanStrip, deadman_strip
-from genesys.ledger.entry import Extracted, LedgerEntry, Links, Provenance
-from genesys.ledger.store import append
+from genesis.console.model import console_model
+from genesis.console.views import DeadmanStrip, deadman_strip
+from genesis.ledger.entry import Extracted, LedgerEntry, Links, Provenance
+from genesis.ledger.store import append
 
 NOW = "2026-08-18T12:00:00+00:00"
 

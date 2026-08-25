@@ -1,4 +1,4 @@
-"""Tests for genesys.hooks.cli — stdin hook JSON → stdout JSON result.
+"""Tests for genesis.hooks.cli — stdin hook JSON → stdout JSON result.
 
 All tests are offline. Uses monkeypatch to simulate stdin + env vars.
 """
@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from genesys.hooks.cli import main
+from genesis.hooks.cli import main
 
 
 # --------------------------------------------------------------------------- #
@@ -65,8 +65,8 @@ def _run_main(
     """Run main() with monkeypatched stdin + env, capture stdout."""
     hook_json = json.dumps(hook)
     monkeypatch.setattr("sys.stdin", io.StringIO(hook_json))
-    monkeypatch.setenv("GENESYS_DATA_ROOT", str(tmp_path))
-    monkeypatch.setenv("GENESYS_NOW", now)
+    monkeypatch.setenv("GENESIS_DATA_ROOT", str(tmp_path))
+    monkeypatch.setenv("GENESIS_NOW", now)
 
     exit_code = main()
 
@@ -147,8 +147,8 @@ def test_cli_invalid_json_on_stdin_exits_one(
     capsys: pytest.CaptureFixture,
 ):
     monkeypatch.setattr("sys.stdin", io.StringIO("not { valid json"))
-    monkeypatch.setenv("GENESYS_DATA_ROOT", str(tmp_path))
-    monkeypatch.setenv("GENESYS_NOW", NOW)
+    monkeypatch.setenv("GENESIS_DATA_ROOT", str(tmp_path))
+    monkeypatch.setenv("GENESIS_NOW", NOW)
 
     exit_code = main()
     assert exit_code == 1
@@ -159,10 +159,10 @@ def test_cli_now_from_env_is_used(
     tmp_path: Path,
     capsys: pytest.CaptureFixture,
 ):
-    """GENESYS_NOW env var is used as the clock.
+    """GENESIS_NOW env var is used as the clock.
 
     With Option B (annotate=False), cli.py produces the append-only sentinel; the WAL
-    line's ts embeds the date from GENESYS_NOW — verifiable via the WAL segment, not
+    line's ts embeds the date from GENESIS_NOW — verifiable via the WAL segment, not
     entry_id (no annotation is created on the auto-hook path).
     """
     transcript = _make_transcript(tmp_path)
@@ -173,8 +173,8 @@ def test_cli_now_from_env_is_used(
         "session_id": "sess-clock-env",
     }
     monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(hook)))
-    monkeypatch.setenv("GENESYS_DATA_ROOT", str(tmp_path))
-    monkeypatch.setenv("GENESYS_NOW", custom_now)
+    monkeypatch.setenv("GENESIS_DATA_ROOT", str(tmp_path))
+    monkeypatch.setenv("GENESIS_NOW", custom_now)
 
     exit_code = main()
     captured = capsys.readouterr()
@@ -183,10 +183,10 @@ def test_cli_now_from_env_is_used(
     # append-only sentinel (Option B)
     assert result == {"appended": True, "annotated": False}
     # WAL segment for the injected date was written
-    from genesys.wal.record import WalRecord
-    from genesys.wal.store import read_segment
+    from genesis.wal.record import WalRecord
+    from genesis.wal.store import read_segment
     lines = read_segment(tmp_path, WalRecord.MEMORY_GRADE, "2026-07-04")
-    assert lines, "WAL MEMORY_GRADE must have a line dated from GENESYS_NOW"
+    assert lines, "WAL MEMORY_GRADE must have a line dated from GENESIS_NOW"
 
 
 def test_cli_now_from_hook_json_is_used_when_env_absent(
@@ -194,7 +194,7 @@ def test_cli_now_from_hook_json_is_used_when_env_absent(
     tmp_path: Path,
     capsys: pytest.CaptureFixture,
 ):
-    """Hook JSON 'now' field is used when GENESYS_NOW is not set.
+    """Hook JSON 'now' field is used when GENESIS_NOW is not set.
 
     With Option B (annotate=False) the auto-hook path produces no annotation, so we verify
     the WAL segment for the hook's date instead of checking entry_id.
@@ -207,8 +207,8 @@ def test_cli_now_from_hook_json_is_used_when_env_absent(
         "now": "2026-06-15T08:00:00+00:00",
     }
     monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(hook)))
-    monkeypatch.setenv("GENESYS_DATA_ROOT", str(tmp_path))
-    monkeypatch.delenv("GENESYS_NOW", raising=False)
+    monkeypatch.setenv("GENESIS_DATA_ROOT", str(tmp_path))
+    monkeypatch.delenv("GENESIS_NOW", raising=False)
 
     exit_code = main()
     captured = capsys.readouterr()
@@ -216,8 +216,8 @@ def test_cli_now_from_hook_json_is_used_when_env_absent(
     assert exit_code == 0
     assert result == {"appended": True, "annotated": False}
     # WAL segment for the hook-injected date was written
-    from genesys.wal.record import WalRecord
-    from genesys.wal.store import read_segment
+    from genesis.wal.record import WalRecord
+    from genesis.wal.store import read_segment
     lines = read_segment(tmp_path, WalRecord.MEMORY_GRADE, "2026-06-15")
     assert lines, "WAL MEMORY_GRADE must have a line dated from hook JSON 'now'"
 
@@ -240,11 +240,11 @@ def test_cli_default_data_root_is_dot(
     capsys: pytest.CaptureFixture,
     tmp_path_factory: pytest.TempPathFactory,
 ):
-    """When GENESYS_DATA_ROOT is not set, defaults to '.' (cwd)."""
+    """When GENESIS_DATA_ROOT is not set, defaults to '.' (cwd)."""
     hook = {"hook_event_name": "SessionStart"}
     monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(hook)))
-    monkeypatch.delenv("GENESYS_DATA_ROOT", raising=False)
-    monkeypatch.setenv("GENESYS_NOW", NOW)
+    monkeypatch.delenv("GENESIS_DATA_ROOT", raising=False)
+    monkeypatch.setenv("GENESIS_NOW", NOW)
     # chdir to a tmp dir so "." resolves safely
     import os
     old_cwd = os.getcwd()

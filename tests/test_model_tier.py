@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from enum import Enum
 
-from genesys.graph.model_tier import STANDARD_MODEL_DEFAULT, resolve_model
+from genesis.graph.model_tier import STANDARD_MODEL_DEFAULT, resolve_model
 
 
 class _Size(str, Enum):

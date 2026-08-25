@@ -1,9 +1,9 @@
 """Projecting a LedgerEntry.links into typed episode edges (spec §4.6, D-SPINE-4)."""
 from __future__ import annotations
 
-from genesys.graph.engine import FakeGraph
-from genesys.ledger.entry import Extracted, LedgerEntry, Links, Provenance
-from genesys.linking.projection import (
+from genesis.graph.engine import FakeGraph
+from genesis.ledger.entry import Extracted, LedgerEntry, Links, Provenance
+from genesis.linking.projection import (
     CAUSED_BY,
     CONTINUES,
     NEXT,

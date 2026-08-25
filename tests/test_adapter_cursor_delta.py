@@ -4,8 +4,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from genesys.hooks.adapter import dispatch
-from genesys.ledger.store import read_all
+from genesis.hooks.adapter import dispatch
+from genesis.ledger.store import read_all
 
 NOW = "2026-08-18T12:00:00+00:00"
 
@@ -14,7 +14,7 @@ def _transcript(tmp_path: Path) -> Path:
     p = tmp_path / "t.jsonl"
     p.write_text(json.dumps({
         "type": "user",
-        "message": {"role": "user", "content": "hello genesys"},
+        "message": {"role": "user", "content": "hello genesis"},
     }) + "\n", encoding="utf-8")
     return p
 

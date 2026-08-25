@@ -10,13 +10,13 @@ import ast
 import importlib
 from pathlib import Path
 
-import genesys.recall.daemon as daemon_mod
-import genesys.recall.service as service_mod
-import genesys.recall.tool as tool_mod
-from genesys.graph.engine import FakeGraph, GraphEdge, Verdict
-from genesys.linking.relatedness import FakeRelatednessScorer
-from genesys.recall.service import RecallService
-from genesys.recall.tier import Tier
+import genesis.recall.daemon as daemon_mod
+import genesis.recall.service as service_mod
+import genesis.recall.tool as tool_mod
+from genesis.graph.engine import FakeGraph, GraphEdge, Verdict
+from genesis.linking.relatedness import FakeRelatednessScorer
+from genesis.recall.service import RecallService
+from genesis.recall.tier import Tier
 
 _READ_PATH = [service_mod, daemon_mod, tool_mod]
 
@@ -45,7 +45,7 @@ def test_recall_modules_expose_no_releasecontext():
 
 def test_fence_module_is_gone():
     with __import_should_fail():
-        importlib.import_module("genesys.recall.fence")
+        importlib.import_module("genesis.recall.fence")
 
 
 class __import_should_fail:

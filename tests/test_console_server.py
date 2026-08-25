@@ -10,9 +10,9 @@ import json
 import sys
 from pathlib import Path
 
-from genesys.console.server import model_to_dict
-from genesys.ledger.entry import Extracted, LedgerEntry, Links, Provenance
-from genesys.ledger.store import append
+from genesis.console.server import model_to_dict
+from genesis.ledger.entry import Extracted, LedgerEntry, Links, Provenance
+from genesis.ledger.store import append
 
 NOW = "2026-08-18T12:00:00+00:00"
 
@@ -87,5 +87,5 @@ def test_model_to_dict_queue_counts(tmp_path: Path):
 
 
 def test_server_module_does_not_import_fastapi_at_top_level():
-    import genesys.console.server  # noqa: F401
+    import genesis.console.server  # noqa: F401
     assert "fastapi" not in sys.modules

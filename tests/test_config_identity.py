@@ -4,15 +4,15 @@ import json
 
 import pytest
 
-from genesys import config
+from genesis import config
 
 
 @pytest.fixture(autouse=True)
 def _isolate_identity(tmp_path, monkeypatch):
     """Point the config file at a temp dir and clear identity env vars.
 
-    Keeps every test independent of the developer's real ~/.genesys/config.json
-    and of any exported GENESYS_PRINCIPAL / GENESYS_ASSISTANT.
+    Keeps every test independent of the developer's real ~/.genesis/config.json
+    and of any exported GENESIS_PRINCIPAL / GENESIS_ASSISTANT.
     """
     monkeypatch.setenv(config.CONFIG_FILE_ENV, str(tmp_path / "config.json"))
     monkeypatch.delenv(config.PRINCIPAL_ENV, raising=False)

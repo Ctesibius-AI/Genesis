@@ -1,4 +1,4 @@
-"""Tests for genesys.hooks.adapter — hook dispatch to the capture pipeline.
+"""Tests for genesis.hooks.adapter — hook dispatch to the capture pipeline.
 
 All tests are offline (fixtures only, no real Claude Code, no API key).
 """
@@ -10,9 +10,9 @@ from pathlib import Path
 
 import pytest
 
-from genesys.diary.backend import FakeBackend
-from genesys.hooks.adapter import dispatch
-from genesys.ledger.store import read_all
+from genesis.diary.backend import FakeBackend
+from genesis.hooks.adapter import dispatch
+from genesis.ledger.store import read_all
 
 
 # --------------------------------------------------------------------------- #
@@ -30,7 +30,7 @@ def _make_transcript(tmp_path: Path, *, name: str = "transcript.jsonl") -> Path:
             "type": "user",
             "message": {
                 "role": "user",
-                "content": "Please list the genesys modules.",
+                "content": "Please list the genesis modules.",
             },
         },
         {
@@ -50,7 +50,7 @@ def _make_transcript(tmp_path: Path, *, name: str = "transcript.jsonl") -> Path:
                         "type": "tool_use",
                         "id": TOOL_USE_ID,
                         "name": "Bash",
-                        "input": {"command": "ls src/genesys/"},
+                        "input": {"command": "ls src/genesis/"},
                     },
                 ],
             },
@@ -75,7 +75,7 @@ def _make_transcript(tmp_path: Path, *, name: str = "transcript.jsonl") -> Path:
                 "content": [
                     {
                         "type": "text",
-                        "text": "The genesys package has capture, diary, hooks, and ledger modules.",
+                        "text": "The genesis package has capture, diary, hooks, and ledger modules.",
                     }
                 ],
             },
@@ -119,8 +119,8 @@ def test_stop_hook_summary_equals_last_assistant_text(tmp_path: Path):
 
     entries = read_all(tmp_path)
     assert len(entries) == 1
-    # Summary is the last assistant_text (provisional F-GENESYS-03 ruling)
-    assert "genesys package has capture" in entries[0].summary
+    # Summary is the last assistant_text (provisional F-GENESIS-03 ruling)
+    assert "genesis package has capture" in entries[0].summary
 
 
 def test_session_end_hook_also_creates_ledger_entry(tmp_path: Path):
@@ -204,8 +204,8 @@ def test_session_start_with_empty_ledger_returns_empty_context(tmp_path: Path):
 
 def test_session_start_with_existing_ledger_returns_diary_text(tmp_path: Path):
     """Seed a ledger entry, then confirm SessionStart includes it in context."""
-    from genesys.ledger.entry import Extracted, LedgerEntry, Links, Provenance
-    from genesys.ledger.store import append
+    from genesis.ledger.entry import Extracted, LedgerEntry, Links, Provenance
+    from genesis.ledger.store import append
 
     append(tmp_path, LedgerEntry(
         entry_id="EP-2026-08-17.0001",

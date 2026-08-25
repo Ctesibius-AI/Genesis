@@ -8,15 +8,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.diary.backend import FakeBackend
-from genesys.hooks import adapter as adapter_mod
-from genesys.hooks.adapter import dispatch
-from genesys.hooks.confirmation import (
+from genesis.diary.backend import FakeBackend
+from genesis.hooks import adapter as adapter_mod
+from genesis.hooks.adapter import dispatch
+from genesis.hooks.confirmation import (
     EMPTY, UNAVAILABLE, UNSAVED, MemoryState, confirmation_line, memory_state)
-from genesys.ledger.entry import Extracted, LedgerEntry, Links, Provenance
-from genesys.ledger.store import append
-from genesys.wal.record import WalRecord
-from genesys.wal.store import append_delta
+from genesis.ledger.entry import Extracted, LedgerEntry, Links, Provenance
+from genesis.ledger.store import append
+from genesis.wal.record import WalRecord
+from genesis.wal.store import append_delta
 
 NOW = "2026-08-26T10:00:00+00:00"
 START = {"hook_event_name": "SessionStart"}
@@ -89,11 +89,11 @@ def test_cli_output_is_pure_json_carrying_systemMessage(tmp_path, monkeypatch, c
     import io
     import json as _json
 
-    from genesys.hooks import cli
-    monkeypatch.setenv("GENESYS_DATA_ROOT", str(tmp_path))
-    monkeypatch.setenv("GENESYS_NOW", NOW)
+    from genesis.hooks import cli
+    monkeypatch.setenv("GENESIS_DATA_ROOT", str(tmp_path))
+    monkeypatch.setenv("GENESIS_NOW", NOW)
     monkeypatch.setattr("sys.stdin", io.StringIO(_json.dumps({"hook_event_name": "SessionStart"})))
     assert cli.main([]) == 0
     payload = _json.loads(capsys.readouterr().out)           # whole stdout is valid JSON (no leading line)
-    assert payload["systemMessage"].startswith("Genesys:")   # user-visible line rides systemMessage
+    assert payload["systemMessage"].startswith("Genesis:")   # user-visible line rides systemMessage
     assert payload["hookSpecificOutput"]["hookEventName"] == "SessionStart"

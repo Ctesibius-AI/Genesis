@@ -8,13 +8,13 @@ import json
 import time
 from pathlib import Path
 
-from genesys.ledger.store import read_all
-from genesys.save_moment import (
+from genesis.ledger.store import read_all
+from genesis.save_moment import (
     find_current_transcript,
     find_transcript_by_session_id,
     save_moment,
 )
-from genesys.wal.annotate import is_annotation
+from genesis.wal.annotate import is_annotation
 
 
 def _write_transcript(path: Path, records: list[dict]) -> None:
@@ -164,7 +164,7 @@ def test_find_transcript_by_session_id_is_exact(tmp_path: Path):
     """The invoking session's transcript is found by its id — even when ANOTHER terminal's
     transcript is newer (the cross-terminal race that mtime-guessing would lose)."""
     import os
-    mine_dir = tmp_path / "-Users-x-Ctesibius-Genesys"
+    mine_dir = tmp_path / "-Users-x-Ctesibius-Genesis"
     other_dir = tmp_path / "-Users-x-Ctesibius"
     mine_dir.mkdir(parents=True)
     other_dir.mkdir(parents=True)
@@ -189,7 +189,7 @@ def test_find_transcript_by_session_id_none_cases(tmp_path: Path):
 def test_cli_main_uses_exact_session_transcript(tmp_path: Path, monkeypatch, capsys):
     """`/save` passes --session-id ($CLAUDE_CODE_SESSION_ID); main() must capture THAT
     session's transcript, not the globally-newest one from another terminal."""
-    from genesys.save_moment import main
+    from genesis.save_moment import main
     data_root = tmp_path / "data"; data_root.mkdir()
     projects = tmp_path / "projects"
     mine_dir = projects / "-mine"; mine_dir.mkdir(parents=True)
@@ -210,10 +210,10 @@ def test_cli_main_uses_exact_session_transcript(tmp_path: Path, monkeypatch, cap
             {"type": "text", "text": "the OTHER terminal — must NOT be captured"}]}},
     ])
     os.utime(other, (9000, 9000))
-    monkeypatch.setattr("genesys.save_moment.find_transcript_by_session_id",
+    monkeypatch.setattr("genesis.save_moment.find_transcript_by_session_id",
                         lambda sid, projects_root=None: find_transcript_by_session_id(sid, projects_root=projects))
     monkeypatch.setattr("sys.argv", [
-        "genesys-save-moment", "--note", "exact save",
+        "genesis-save-moment", "--note", "exact save",
         "--data-root", str(data_root), "--session-id", "sess-mine",
         "--now", "2026-08-19T10:00:00+00:00", "--no-extract",
     ])
@@ -226,16 +226,16 @@ def test_cli_main_uses_exact_session_transcript(tmp_path: Path, monkeypatch, cap
 
 
 def test_cli_main_saves_and_prints(tmp_path: Path, monkeypatch, capsys):
-    """The `/save` command runs `python -m genesys.save_moment` -> main(); it must actually
+    """The `/save` command runs `python -m genesis.save_moment` -> main(); it must actually
     parse argv, save a salient annotation, and print a confirmation (regression: a missing
     __main__ guard / silent main made the command a no-op)."""
-    from genesys.save_moment import main
+    from genesis.save_moment import main
 
     data_root = tmp_path / "data"
     data_root.mkdir()
     t = _fixture_transcript(tmp_path)
     monkeypatch.setattr("sys.argv", [
-        "genesys-save-moment",
+        "genesis-save-moment",
         "--note", "cli save test",
         "--data-root", str(data_root),
         "--transcript", str(t),
@@ -256,7 +256,7 @@ def test_cli_main_extract_runs_the_extraction_team(tmp_path: Path, monkeypatch, 
     """Owner model: a save must trigger the extraction team IMMEDIATELY (default --extract).
     We monkeypatch the live run_once (offline can't hit anthropic/falkordb) and assert it's
     invoked with the same data_root/now the save used."""
-    from genesys.save_moment import main
+    from genesis.save_moment import main
     data_root = tmp_path / "data"; data_root.mkdir()
     t = _fixture_transcript(tmp_path)
     calls = {}
@@ -266,9 +266,9 @@ def test_cli_main_extract_runs_the_extraction_team(tmp_path: Path, monkeypatch, 
         calls["now"] = now
         return ["EP-2026-08-19.0001"]
 
-    monkeypatch.setattr("genesys.extraction.live.run_once", fake_run_once)
+    monkeypatch.setattr("genesis.extraction.live.run_once", fake_run_once)
     monkeypatch.setattr("sys.argv", [
-        "genesys-save-moment", "--note", "extract me",
+        "genesis-save-moment", "--note", "extract me",
         "--data-root", str(data_root), "--transcript", str(t),
         "--session-id", "sess-x", "--now", "2026-08-19T10:00:00+00:00",
         "--extract",
@@ -284,14 +284,14 @@ def test_cli_main_extract_runs_the_extraction_team(tmp_path: Path, monkeypatch, 
 
 def test_cli_main_no_extract_only_queues(tmp_path: Path, monkeypatch, capsys):
     """--no-extract queues the save WITHOUT running extraction (the manual/deferred path)."""
-    from genesys.save_moment import main
+    from genesis.save_moment import main
     data_root = tmp_path / "data"; data_root.mkdir()
     t = _fixture_transcript(tmp_path)
     called = {"n": 0}
-    monkeypatch.setattr("genesys.extraction.live.run_once",
+    monkeypatch.setattr("genesis.extraction.live.run_once",
                         lambda dr, *, now: called.__setitem__("n", called["n"] + 1) or [])
     monkeypatch.setattr("sys.argv", [
-        "genesys-save-moment", "--note", "queue only",
+        "genesis-save-moment", "--note", "queue only",
         "--data-root", str(data_root), "--transcript", str(t),
         "--session-id", "sess-y", "--now", "2026-08-19T10:00:00+00:00",
         "--no-extract",

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 
-from genesys.workers.backend import (
+from genesis.workers.backend import (
     TIER_OPUS, TIER_SONNET, AnthropicLLMBackend, FakeLLMBackend,
 )
 
@@ -41,5 +41,5 @@ def test_anthropic_backend_uses_injected_client_cached_system():
 
 
 def test_module_does_not_import_anthropic_at_top_level():
-    import genesys.workers.backend  # noqa: F401
+    import genesis.workers.backend  # noqa: F401
     assert "anthropic" not in sys.modules

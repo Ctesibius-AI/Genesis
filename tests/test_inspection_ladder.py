@@ -8,11 +8,11 @@ from __future__ import annotations
 import random
 from pathlib import Path
 
-from genesys.graph.engine import FakeGraph, GraphEdge
-from genesys.inspection.audit import FalsePassChart
-from genesys.inspection.ladder import LadderConfig, run_ladder
-from genesys.journal.journal import read_journal
-from genesys.workers.backend import FakeLLMBackend
+from genesis.graph.engine import FakeGraph, GraphEdge
+from genesis.inspection.audit import FalsePassChart
+from genesis.inspection.ladder import LadderConfig, run_ladder
+from genesis.journal.journal import read_journal
+from genesis.workers.backend import FakeLLMBackend
 
 
 def _edge(eid, fact):

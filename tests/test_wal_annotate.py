@@ -1,12 +1,12 @@
-"""Save = ledger annotation — a window, not a copy (spec §2.2, DR-43, F-GENESYS-03 superseded)."""
+"""Save = ledger annotation — a window, not a copy (spec §2.2, DR-43, F-GENESIS-03 superseded)."""
 from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.ids import episodes_dir
-from genesys.ledger.store import read_all
-from genesys.wal.annotate import annotation_record, is_annotation, save_annotation
-from genesys.wal.record import WalRecord
+from genesis.ids import episodes_dir
+from genesis.ledger.store import read_all
+from genesis.wal.annotate import annotation_record, is_annotation, save_annotation
+from genesis.wal.record import WalRecord
 
 
 def test_annotation_is_a_window_not_a_copy(tmp_path: Path):
@@ -82,7 +82,7 @@ def test_consecutive_annotations_are_structurally_chained(tmp_path: Path):
 
 
 def test_a_legacy_copied_episode_is_not_an_annotation(tmp_path: Path):
-    from genesys.save import fast_path_save
+    from genesis.save import fast_path_save
     e = fast_path_save(tmp_path, raw_span="raw", summary="s", session_id="s1",
                        speakers=["the principal"], span_start="", span_end="",
                        ts="2026-08-18T10:00:00+00:00")

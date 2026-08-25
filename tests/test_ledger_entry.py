@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from genesys.ledger.entry import (
+from genesis.ledger.entry import (
     Extracted,
     LedgerEntry,
     Links,

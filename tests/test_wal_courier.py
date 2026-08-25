@@ -3,12 +3,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.capture.mirror import mirror_events
-from genesys.ledger.store import read_all
-from genesys.wal.annotate import is_annotation
-from genesys.wal.courier import append_and_annotate
-from genesys.wal.record import WalRecord
-from genesys.wal.store import read_segment
+from genesis.capture.mirror import mirror_events
+from genesis.ledger.store import read_all
+from genesis.wal.annotate import is_annotation
+from genesis.wal.courier import append_and_annotate
+from genesis.wal.record import WalRecord
+from genesis.wal.store import read_segment
 
 
 def _capture(user_text, thinking_text):

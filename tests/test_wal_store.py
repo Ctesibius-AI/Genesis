@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.wal.record import WalRecord, segment_path
-from genesys.wal.store import append_delta, list_segment_dates, read_segment
+from genesis.wal.record import WalRecord, segment_path
+from genesis.wal.store import append_delta, list_segment_dates, read_segment
 
 
 def test_append_writes_a_line_to_the_days_segment(tmp_path: Path):

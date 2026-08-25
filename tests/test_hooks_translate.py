@@ -1,4 +1,4 @@
-"""Tests for genesys.hooks.translate — CC transcript → Genesys event dicts.
+"""Tests for genesis.hooks.translate — CC transcript → Genesis event dicts.
 
 All tests are offline (no network, no real Claude Code).
 """
@@ -9,7 +9,7 @@ import json
 
 import pytest
 
-from genesys.hooks.translate import (
+from genesis.hooks.translate import (
     cc_transcript_to_events,
     last_assistant_text,
     last_user_text,
@@ -65,7 +65,7 @@ CC_RECORDS: list[dict] = [
                 {
                     "type": "tool_result",
                     "tool_use_id": TOOL_USE_ID,
-                    "content": "genesys/\nREADME.md\n",
+                    "content": "genesis/\nREADME.md\n",
                 }
             ],
         },
@@ -78,7 +78,7 @@ CC_RECORDS: list[dict] = [
             "content": [
                 {
                     "type": "text",
-                    "text": "The src directory contains genesys/ and README.md.",
+                    "text": "The src directory contains genesis/ and README.md.",
                 }
             ],
         },
@@ -103,7 +103,7 @@ def test_assistant_text_block_maps_to_assistant_text_event():
     text_evs = [e for e in events if e["type"] == "assistant_text"]
     texts = [e["text"] for e in text_evs]
     assert "Let me check the src directory for you." in texts
-    assert "The src directory contains genesys/ and README.md." in texts
+    assert "The src directory contains genesis/ and README.md." in texts
 
 
 def test_thinking_block_maps_to_assistant_thinking_event():
@@ -124,7 +124,7 @@ def test_tool_use_block_maps_with_paired_tool_response():
     assert json.loads(ev["tool_input"]) == {"command": "ls src/"}
     assert ev["author"] == "daimon"
     # tool_response is the paired result
-    assert "genesys/" in ev["tool_response"]
+    assert "genesis/" in ev["tool_response"]
 
 
 def test_tool_result_record_is_not_emitted_as_standalone_event():
@@ -238,7 +238,7 @@ def test_last_assistant_text_returns_last():
     events = cc_transcript_to_events(CC_RECORDS)
     result = last_assistant_text(events)
     # The last assistant_text is from the final assistant turn
-    assert result == "The src directory contains genesys/ and README.md."
+    assert result == "The src directory contains genesis/ and README.md."
 
 
 def test_last_user_text_returns_last():
@@ -258,13 +258,13 @@ def test_last_user_text_empty_when_none():
 
 
 # --------------------------------------------------------------------------- #
-# provisional_summary (F-GENESYS-03 ruling)                                    #
+# provisional_summary (F-GENESIS-03 ruling)                                    #
 # --------------------------------------------------------------------------- #
 
 def test_provisional_summary_returns_last_assistant_text():
     events = cc_transcript_to_events(CC_RECORDS)
     summary = provisional_summary(events)
-    assert summary == "The src directory contains genesys/ and README.md."
+    assert summary == "The src directory contains genesis/ and README.md."
 
 
 def test_provisional_summary_falls_back_to_user_when_no_assistant():

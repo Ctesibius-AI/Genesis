@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from genesys.orchestration.fleet import SubagentSummary, SubagentTask
-from genesys.orchestration.orchestrator import FakeOrchestrator, fan_out
+from genesis.orchestration.fleet import SubagentSummary, SubagentTask
+from genesis.orchestration.orchestrator import FakeOrchestrator, fan_out
 
 
 def _task(i):

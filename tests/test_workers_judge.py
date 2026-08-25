@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from genesys.workers.backend import FakeLLMBackend
-from genesys.workers.judge import JUDGE_PROMPT, JudgeResult, invalidation_judge
+from genesis.workers.backend import FakeLLMBackend
+from genesis.workers.judge import JUDGE_PROMPT, JudgeResult, invalidation_judge
 
 
 def test_prompt_is_verbatim_c32_anchors():

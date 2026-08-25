@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from genesys.journal.journal import (
+from genesis.journal.journal import (
     JOURNAL_ACTIONS,
     JournalEntry,
     append_journal,

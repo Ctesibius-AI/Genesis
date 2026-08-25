@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from genesys.recall.scorer import (
+from genesis.recall.scorer import (
     Channel,
     ChannelResult,
     EmptyCause,

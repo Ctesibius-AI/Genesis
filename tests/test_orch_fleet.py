@@ -4,7 +4,7 @@ import dataclasses
 
 import pytest
 
-from genesys.orchestration.fleet import (
+from genesis.orchestration.fleet import (
     DAIMON,
     SubagentSummary,
     SubagentTask,

@@ -1,7 +1,7 @@
 """Size guard (spec §3/§4): a window too large to screen routes straight to the Verifier."""
 from __future__ import annotations
 
-from genesys.inspection.sizeguard import size_route
+from genesis.inspection.sizeguard import size_route
 
 
 def test_small_window_is_screenable():

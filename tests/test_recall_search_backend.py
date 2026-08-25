@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from genesys.graph.client import ClientEdge
-from genesys.graph.engine import FakeGraph, GraphEdge, Verdict
-from genesys.recall.search_backend import (
+from genesis.graph.client import ClientEdge
+from genesis.graph.engine import FakeGraph, GraphEdge, Verdict
+from genesis.recall.search_backend import (
     FakeRecallSearch,
     GraphSearchChannel,
     GraphSearchRecallSearch,

@@ -13,14 +13,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from genesys.capture.mirror import mirror_events
-from genesys.hooks.adapter import dispatch
-from genesys.ledger.store import read_all
-from genesys.save_moment import save_moment
-from genesys.wal.annotate import is_annotation
-from genesys.wal.courier import append_and_annotate
-from genesys.wal.record import WalRecord
-from genesys.wal.store import read_segment
+from genesis.capture.mirror import mirror_events
+from genesis.hooks.adapter import dispatch
+from genesis.ledger.store import read_all
+from genesis.save_moment import save_moment
+from genesis.wal.annotate import is_annotation
+from genesis.wal.courier import append_and_annotate
+from genesis.wal.record import WalRecord
+from genesis.wal.store import read_segment
 
 
 # ------------------------------------------------------------------ #

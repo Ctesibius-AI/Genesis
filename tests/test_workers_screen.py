@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from genesys.workers.backend import FakeLLMBackend
-from genesys.workers.screen import SCREEN_PROMPT, ScreenResult, screen
+from genesis.workers.backend import FakeLLMBackend
+from genesis.workers.screen import SCREEN_PROMPT, ScreenResult, screen
 
 
 def test_prompt_is_verbatim_c31_anchors():

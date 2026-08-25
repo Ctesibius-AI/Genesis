@@ -1,7 +1,7 @@
-"""Tests for genesys.backfill.cli — batch backfill injection door.
+"""Tests for genesis.backfill.cli — batch backfill injection door.
 
 All tests are OFFLINE: fixture .jsonl transcripts constructed in-test, tmp_path as
-data_root, no network, no real LLM, no writes to the real ~/.genesys. The backfill
+data_root, no network, no real LLM, no writes to the real ~/.genesis. The backfill
 CLI is a thin driver over the existing hook adapter (dispatch), which for SessionEnd
 is model-free.
 
@@ -20,9 +20,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from genesys.backfill.cli import main
-from genesys.ledger.entry import Extracted
-from genesys.ledger.store import read_all
+from genesis.backfill.cli import main
+from genesis.ledger.entry import Extracted
+from genesis.ledger.store import read_all
 
 
 # --------------------------------------------------------------------------- #

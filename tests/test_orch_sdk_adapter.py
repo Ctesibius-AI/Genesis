@@ -16,15 +16,15 @@ import sys
 
 import pytest
 
-from genesys.orchestration.backends import (
+from genesis.orchestration.backends import (
     SdkOrchestrator,
     agent_sdk_orchestrator,
     langgraph_orchestrator,
     select_orchestrator,
 )
-from genesys.orchestration.fleet import SubagentSummary, SubagentTask, is_write_bearing
-from genesys.orchestration.orchestrator import Orchestrator, fan_out
-from genesys.orchestration.writer import commit_findings
+from genesis.orchestration.fleet import SubagentSummary, SubagentTask, is_write_bearing
+from genesis.orchestration.orchestrator import Orchestrator, fan_out
+from genesis.orchestration.writer import commit_findings
 
 
 def _task(i, role="Subagent"):
@@ -147,7 +147,7 @@ def test_langgraph_binding_needs_the_extra_offline():
 
 
 def test_backends_module_does_not_import_any_sdk_at_top_level():
-    import genesys.orchestration.backends  # noqa: F401
+    import genesis.orchestration.backends  # noqa: F401
     assert "claude_agent_sdk" not in sys.modules
     assert "langgraph" not in sys.modules
 
@@ -161,7 +161,7 @@ def test_select_falls_back_to_langgraph_then_raises_offline():
 
 def test_select_returns_a_conforming_orchestrator_when_a_backend_is_present(monkeypatch):
     """When agent-sdk resolves, select_orchestrator hands back an Orchestrator (not a raise)."""
-    import genesys.orchestration.backends as b
+    import genesis.orchestration.backends as b
 
     sentinel = SdkOrchestrator(_FakeSubagentRun())
     monkeypatch.setattr(b, "agent_sdk_orchestrator", lambda *, model=None: sentinel)

@@ -2,13 +2,13 @@
 """The Daimon-driven recall tool over the service (spec §4.7b; design §8; DR-08 — no hook)."""
 from __future__ import annotations
 
-from genesys.graph.engine import FakeGraph, GraphEdge, Verdict
-from genesys.linking.relatedness import FakeRelatednessScorer
-from genesys.recall.scorer import EmptyCause
-from genesys.recall.search_backend import FakeRecallSearch
-from genesys.recall.service import RecallService
-from genesys.recall.tier import Tier
-from genesys.recall.tool import format_for_injection, recall_tool
+from genesis.graph.engine import FakeGraph, GraphEdge, Verdict
+from genesis.linking.relatedness import FakeRelatednessScorer
+from genesis.recall.scorer import EmptyCause
+from genesis.recall.search_backend import FakeRecallSearch
+from genesis.recall.service import RecallService
+from genesis.recall.tier import Tier
+from genesis.recall.tool import format_for_injection, recall_tool
 
 
 def _service(edges_by_query):

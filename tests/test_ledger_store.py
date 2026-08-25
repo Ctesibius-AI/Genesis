@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.ledger.entry import Extracted, LedgerEntry, Links, Provenance
-from genesys.ledger.store import (
+from genesis.ledger.entry import Extracted, LedgerEntry, Links, Provenance
+from genesis.ledger.store import (
     append,
     month_path,
     read_all,

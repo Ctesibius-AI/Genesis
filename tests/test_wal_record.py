@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.wal.record import (
+from genesis.wal.record import (
     WalRecord,
     WalSegmentLine,
     from_jsonl,
@@ -32,7 +32,7 @@ def test_layout_is_per_day_segment_under_wal_record_dir(tmp_path: Path):
 def test_segment_line_round_trips():
     line = WalSegmentLine(ts="2026-08-18T10:00:00+00:00", span_start="",
                           span_end="2026-08-18T10:05:00+00:00", session_id="s1",
-                          text="hello genesys")
+                          text="hello genesis")
     assert from_jsonl(to_jsonl(line)) == line
 
 

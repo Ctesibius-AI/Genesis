@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.console.views import Health, health_strip, infra_view, security_view
-from genesys.journal.journal import JournalEntry, append_journal
+from genesis.console.views import Health, health_strip, infra_view, security_view
+from genesis.journal.journal import JournalEntry, append_journal
 
 
 def _j(tmp_path, action, scope="EP-1", ts="2026-08-17T10:00:00+00:00"):

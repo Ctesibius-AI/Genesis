@@ -1,6 +1,6 @@
 """P5 integration seam: extraction/capture task-lifecycle signal -> task.* events.
 
-The DR-37 capture-mirror (genesys.capture.mirror) already surfaces first-class
+The DR-37 capture-mirror (genesis.capture.mirror) already surfaces first-class
 ``task.created`` / ``task.completed`` projection entries (spec §4.2a). This wires that
 clean signal into the event-sourced Tasks store (spec §4.10, DR-17): each captured
 task-lifecycle entry becomes a ``TaskEvent`` via the existing emit/events API.
@@ -17,10 +17,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.capture.mirror import mirror_events
-from genesys.tasks.capture_emit import emit_task_events_from_capture
-from genesys.tasks.department import tasks_department
-from genesys.tasks.events import read_events
+from genesis.capture.mirror import mirror_events
+from genesis.tasks.capture_emit import emit_task_events_from_capture
+from genesis.tasks.department import tasks_department
+from genesis.tasks.events import read_events
 
 
 def _capture_with_task(created_label: str, completed: bool, task_id: str = "t-1"):

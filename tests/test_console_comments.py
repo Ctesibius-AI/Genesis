@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.console.comments import Comment, add_comment, read_comments
+from genesis.console.comments import Comment, add_comment, read_comments
 
 
 def test_comment_is_scrubbed_before_write(tmp_path: Path):

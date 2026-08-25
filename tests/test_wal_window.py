@@ -3,9 +3,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.wal.record import WalRecord
-from genesys.wal.store import append_delta
-from genesys.wal.window import _dates_in_range, read_window
+from genesis.wal.record import WalRecord
+from genesis.wal.store import append_delta
+from genesis.wal.window import _dates_in_range, read_window
 
 
 def _add(tmp_path, ts, text):

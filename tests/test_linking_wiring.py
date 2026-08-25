@@ -1,9 +1,9 @@
 """Integration wiring tests: link_episode recording, save structural linking, drain semantic linking (spec §4.6, DR-09, DR-20)."""
 from __future__ import annotations
 
-from genesys.graph.engine import FakeGraph
-from genesys.ledger.store import read_all
-from genesys.linking.relatedness import FakeRelatednessScorer
+from genesis.graph.engine import FakeGraph
+from genesis.ledger.store import read_all
+from genesis.linking.relatedness import FakeRelatednessScorer
 
 
 def test_fakegraph_link_episode_records():
@@ -13,7 +13,7 @@ def test_fakegraph_link_episode_records():
 
 
 def test_save_derives_prev_via_structural_linker(tmp_path):
-    from genesys.save import fast_path_save
+    from genesis.save import fast_path_save
     fast_path_save(tmp_path, raw_span="a", summary="first", session_id="s1",
                    speakers=["the principal"], span_start="0", span_end="1",
                    ts="2026-08-17T10:00:00Z")
@@ -27,7 +27,7 @@ def test_save_derives_prev_via_structural_linker(tmp_path):
 
 def test_save_respects_explicit_prev_override(tmp_path):
     """When caller passes prev explicitly, structural linker must NOT overwrite it."""
-    from genesys.save import fast_path_save
+    from genesis.save import fast_path_save
     fast_path_save(tmp_path, raw_span="a", summary="first", session_id="s1",
                    speakers=["the principal"], span_start="0", span_end="1",
                    ts="2026-08-17T10:00:00Z")
@@ -39,9 +39,9 @@ def test_save_respects_explicit_prev_override(tmp_path):
 
 def test_drain_applies_semantic_links(tmp_path):
     # minimal drain smoke: two saved+queued entries, a scorer that links them
-    from genesys.save import fast_path_save
-    from genesys.extraction.drain import drain_once
-    from genesys.workers.backend import FakeLLMBackend
+    from genesis.save import fast_path_save
+    from genesis.extraction.drain import drain_once
+    from genesis.workers.backend import FakeLLMBackend
 
     e1 = fast_path_save(tmp_path, raw_span="GRAFIX invoicing detail", summary="GRAFIX invoicing",
                         session_id="s1", speakers=["the principal"], span_start="0", span_end="1",
@@ -60,11 +60,11 @@ def test_drain_applies_semantic_links(tmp_path):
 
 
 def test_drain_records_supersession_and_projects_edges(tmp_path):
-    from genesys.save import fast_path_save
-    from genesys.extraction.drain import drain_once
-    from genesys.workers.backend import FakeLLMBackend
-    from genesys.linking.decision import SupersessionDecision
-    from genesys.graph.engine import GraphEdge
+    from genesis.save import fast_path_save
+    from genesis.extraction.drain import drain_once
+    from genesis.workers.backend import FakeLLMBackend
+    from genesis.linking.decision import SupersessionDecision
+    from genesis.graph.engine import GraphEdge
 
     prior = fast_path_save(tmp_path, raw_span="old plan", summary="old plan",
                            session_id="s1", speakers=["the principal"], span_start="0", span_end="1",
@@ -97,9 +97,9 @@ def test_drain_records_supersession_and_projects_edges(tmp_path):
 
 def test_drain_without_project_or_supersession_is_unchanged(tmp_path):
     # existing callers pass neither: no typed edges, no supersession writes, still drains.
-    from genesys.save import fast_path_save
-    from genesys.extraction.drain import drain_once
-    from genesys.workers.backend import FakeLLMBackend
+    from genesis.save import fast_path_save
+    from genesis.extraction.drain import drain_once
+    from genesis.workers.backend import FakeLLMBackend
 
     e = fast_path_save(tmp_path, raw_span="solo", summary="solo",
                        session_id="s1", speakers=["the principal"], span_start="0", span_end="1",

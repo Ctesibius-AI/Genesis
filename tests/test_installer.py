@@ -9,8 +9,8 @@ from pathlib import Path
 
 import pytest
 
-from genesys.hooks.wiring import GENESYS_EVENTS, hook_wiring_status, is_genesys_hook
-from genesys.install.installer import InstallError, compute_store, install, uninstall
+from genesis.hooks.wiring import GENESIS_EVENTS, hook_wiring_status, is_genesis_hook
+from genesis.install.installer import InstallError, compute_store, install, uninstall
 
 
 def _settings(ws: Path) -> dict:
@@ -44,7 +44,7 @@ def test_hooks_are_project_local_only(tmp_path):
     ws1, ws2 = tmp_path / "ws1", tmp_path / "ws2"
     fake_home_claude = tmp_path / "home" / ".claude" / "settings.json"
     _install(ws1, tmp_path / "data")
-    # ws1 got the genesys hook
+    # ws1 got the genesis hook
     assert any(hook_wiring_status(ws1 / ".claude" / "settings.json").values())
     # nothing written outside ws1: ws2 + a global ~/.claude are untouched
     assert not (ws2 / ".claude" / "settings.json").exists()
@@ -65,9 +65,9 @@ def test_idempotent_and_foreign_hook_survives(tmp_path):
     # foreign Stop hook preserved
     assert any("response_validator" in h["command"]
                for g in hooks["Stop"] for h in g["hooks"])
-    # genesys added exactly once per event (idempotent)
-    for ev in GENESYS_EVENTS:
-        gen = [h for g in hooks[ev] for h in g["hooks"] if is_genesys_hook(h["command"])]
+    # genesis added exactly once per event (idempotent)
+    for ev in GENESIS_EVENTS:
+        gen = [h for g in hooks[ev] for h in g["hooks"] if is_genesis_hook(h["command"])]
         assert len(gen) == 1
 
 
@@ -94,7 +94,7 @@ def test_store_modes(tmp_path):
 
 # --- AC-I3: clean uninstall ---
 
-def test_uninstall_removes_only_genesys(tmp_path):
+def test_uninstall_removes_only_genesis(tmp_path):
     ws = tmp_path / "ws"
     settings = ws / ".claude" / "settings.json"
     settings.parent.mkdir(parents=True)
@@ -108,9 +108,9 @@ def test_uninstall_removes_only_genesys(tmp_path):
 
     uninstall(ws)
     s = _settings(ws)
-    # foreign hook + foreign env key survive; genesys gone
+    # foreign hook + foreign env key survive; genesis gone
     assert any("response_validator" in h["command"] for g in s["hooks"].get("Stop", []) for h in g["hooks"])
-    assert not any(hook_wiring_status(settings).values())  # no genesys hooks left
+    assert not any(hook_wiring_status(settings).values())  # no genesis hooks left
     assert s["env"] == {"FOREIGN": "keep"}
     assert not (ws / ".claude" / "commands" / "save.md").exists()  # /save removed
 

@@ -3,11 +3,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.extraction.analyst import prepare_episode
-from genesys.save import fast_path_save
-from genesys.wal.annotate import save_annotation
-from genesys.wal.record import WalRecord
-from genesys.wal.store import append_delta
+from genesis.extraction.analyst import prepare_episode
+from genesis.save import fast_path_save
+from genesis.wal.annotate import save_annotation
+from genesis.wal.record import WalRecord
+from genesis.wal.store import append_delta
 
 
 def test_annotation_entry_is_cut_from_the_record(tmp_path: Path):

@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.graph.engine import FakeGraph, GraphEdge, Verdict
-from genesys.journal.journal import read_journal
-from genesys.supervisor.gate import apply_remedy, is_persona_anchor, run_gate
-from genesys.workers.backend import FakeLLMBackend
-from genesys.workers.verifier import VerifierRemedy
+from genesis.graph.engine import FakeGraph, GraphEdge, Verdict
+from genesis.journal.journal import read_journal
+from genesis.supervisor.gate import apply_remedy, is_persona_anchor, run_gate
+from genesis.workers.backend import FakeLLMBackend
+from genesis.workers.verifier import VerifierRemedy
 
 
 def test_persona_anchor_detection():

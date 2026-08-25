@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import pytest
 
-from genesys.graph.adapter import GraphitiEngine, to_graph_edge
-from genesys.graph.client import ClientEdge, CommitMarker, FakeGraphitiClient
-from genesys.graph.engine import Verdict
+from genesis.graph.adapter import GraphitiEngine, to_graph_edge
+from genesis.graph.client import ClientEdge, CommitMarker, FakeGraphitiClient
+from genesis.graph.engine import Verdict
 
 
 def _clock(seq):
@@ -61,8 +61,8 @@ def test_clock_required_when_not_injected():
 
 
 def test_invalidated_in_window_reads_expired_edges():
-    from genesys.graph.adapter import GraphitiEngine
-    from genesys.graph.client import ClientEdge, FakeGraphitiClient
+    from genesis.graph.adapter import GraphitiEngine
+    from genesis.graph.client import ClientEdge, FakeGraphitiClient
 
     c = FakeGraphitiClient()
     c.seed(ClientEdge(uuid="e-old", fact="uses X", episodes=["ep-0"]))
@@ -78,26 +78,26 @@ def test_invalidated_in_window_reads_expired_edges():
 
 
 def test_get_returns_translated_edge():
-    from genesys.graph.adapter import GraphitiEngine
-    from genesys.graph.client import ClientEdge, FakeGraphitiClient
+    from genesis.graph.adapter import GraphitiEngine
+    from genesis.graph.client import ClientEdge, FakeGraphitiClient
 
     c = FakeGraphitiClient()
     c.seed(ClientEdge(uuid="e1", fact="f", episodes=["ep-0"], attributes={"verdict": "quarantined"}))
     eng = GraphitiEngine(c)
-    from genesys.graph.engine import Verdict
+    from genesis.graph.engine import Verdict
     assert eng.get("e1").verdict == Verdict.QUARANTINED
 
 
 def _engine_with(edge):
-    from genesys.graph.adapter import GraphitiEngine
-    from genesys.graph.client import FakeGraphitiClient
+    from genesis.graph.adapter import GraphitiEngine
+    from genesis.graph.client import FakeGraphitiClient
     c = FakeGraphitiClient()
     c.seed(edge)
     return GraphitiEngine(c), c
 
 
 def test_reopen_clears_invalidation_and_marks_contested():
-    from genesys.graph.client import ClientEdge
+    from genesis.graph.client import ClientEdge
     eng, c = _engine_with(ClientEdge(uuid="e1", fact="f", episodes=["ep-0"],
                                      invalid_at="t", expired_at="t"))
     eng.reopen("e1", "ep-9")
@@ -111,8 +111,8 @@ def test_reopen_clears_invalidation_and_marks_contested():
 
 
 def test_set_verdict_write_superseded_write_fact():
-    from genesys.graph.client import ClientEdge
-    from genesys.graph.engine import Verdict
+    from genesis.graph.client import ClientEdge
+    from genesis.graph.engine import Verdict
     eng, c = _engine_with(ClientEdge(uuid="e1", fact="old", episodes=["ep-0"]))
     eng.set_verdict("e1", Verdict.CONFIRMED)
     eng.write_superseded_by("e1", "e2")
@@ -126,7 +126,7 @@ def test_set_verdict_write_superseded_write_fact():
 
 
 def test_link_episode_records_typed_edge():
-    """link_episode projects a Genesys-side typed edge onto the client (spec §4.6, D-SPINE-4)."""
+    """link_episode projects a Genesis-side typed edge onto the client (spec §4.6, D-SPINE-4)."""
     eng, c = _engine_with(ClientEdge(uuid="e1", fact="f", episodes=["ep-0"]))
     eng.link_episode("EP-1", "EP-2", "NEXT_EPISODE")
     assert ("EP-1", "EP-2", "NEXT_EPISODE") in c._typed

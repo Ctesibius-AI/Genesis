@@ -1,7 +1,7 @@
 """The SupersessionDecision carrier from the Supervisor path to apply_supersession (§8.2)."""
 from __future__ import annotations
 
-from genesys.linking.decision import SupersessionDecision
+from genesis.linking.decision import SupersessionDecision
 
 
 def test_defaults_are_empty_and_is_empty_true():

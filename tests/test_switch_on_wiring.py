@@ -9,13 +9,13 @@ from __future__ import annotations
 import io
 import json
 
-import genesys.extraction.live as live
-import genesys.hooks.cli as hooks_cli
-from genesys.inspection.ladder import LadderConfig
+import genesis.extraction.live as live
+import genesis.hooks.cli as hooks_cli
+from genesis.inspection.ladder import LadderConfig
 
 
 def test_live_hook_passes_wal_and_cursor_delta(monkeypatch, tmp_path):
-    """genesys-hook (the wired SessionEnd/PreCompact/SessionStart entry) must dispatch
+    """genesis-hook (the wired SessionEnd/PreCompact/SessionStart entry) must dispatch
     with wal=True + cursor_delta=True so live capture takes the WAL annotation path."""
     captured: dict = {}
 
@@ -25,7 +25,7 @@ def test_live_hook_passes_wal_and_cursor_delta(monkeypatch, tmp_path):
         return {"ok": True}
 
     monkeypatch.setattr(hooks_cli, "dispatch", fake_dispatch)
-    monkeypatch.setenv("GENESYS_DATA_ROOT", str(tmp_path))
+    monkeypatch.setenv("GENESIS_DATA_ROOT", str(tmp_path))
     payload = {"hook_event_name": "SessionEnd", "now": "2026-08-19T10:00:00+00:00"}
     monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(payload)))
 
@@ -37,11 +37,11 @@ def test_live_hook_passes_wal_and_cursor_delta(monkeypatch, tmp_path):
 
 
 def test_live_drain_runs_the_ladder_shadow_off(monkeypatch, tmp_path):
-    """genesys-worker's run_once must drain through the inspection ladder with shadow=False
+    """genesis-worker's run_once must drain through the inspection ladder with shadow=False
     (Tier 0 routing live, per owner ruling)."""
     captured: dict = {}
 
-    monkeypatch.setattr("genesys.doctor.doctor_requeue", lambda data_root: [])
+    monkeypatch.setattr("genesis.doctor.doctor_requeue", lambda data_root: [])
     monkeypatch.setattr(live, "build_live", lambda data_root: ("ENG", "BK", "SC"))
 
     def fake_drain(data_root, engine, backend, *, ts, **kw):
@@ -49,7 +49,7 @@ def test_live_drain_runs_the_ladder_shadow_off(monkeypatch, tmp_path):
         captured["ts"] = ts
         return ["EP-1"]
 
-    monkeypatch.setattr("genesys.extraction.drain.drain_once", fake_drain)
+    monkeypatch.setattr("genesis.extraction.drain.drain_once", fake_drain)
 
     out = live.run_once(tmp_path, now="2026-08-19T10:00:00+00:00")
 

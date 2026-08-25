@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from genesys.linking.relatedness import (
+from genesis.linking.relatedness import (
     REFERENCES_MIN,
     SAME_TOPIC_MIN,
     FakeRelatednessScorer,

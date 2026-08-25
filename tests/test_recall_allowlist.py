@@ -7,12 +7,12 @@ primary guard (graphiti absent offline, `pragma: no cover`). AC-DROP1: every exc
 """
 from __future__ import annotations
 
-from genesys.graph.engine import FakeGraph, GraphEdge, Verdict
-from genesys.linking.relatedness import FakeRelatednessScorer
-from genesys.recall.allowlist import ALLOWED_EDGE_TYPES, filter_allowed, is_allowed
-from genesys.recall.search_backend import FakeRecallSearch
-from genesys.recall.service import RecallService
-from genesys.recall.tier import Tier
+from genesis.graph.engine import FakeGraph, GraphEdge, Verdict
+from genesis.linking.relatedness import FakeRelatednessScorer
+from genesis.recall.allowlist import ALLOWED_EDGE_TYPES, filter_allowed, is_allowed
+from genesis.recall.search_backend import FakeRecallSearch
+from genesis.recall.service import RecallService
+from genesis.recall.tier import Tier
 
 
 def _edge(eid, fact, *, type, class_=None):

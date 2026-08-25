@@ -4,8 +4,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from genesys.ledger.cli import main
-from genesys.hooks.wiring import hook_wiring_status
+from genesis.ledger.cli import main
+from genesis.hooks.wiring import hook_wiring_status
 
 
 def test_doctor_deadman_reports_no_ring(tmp_path: Path, capsys):
@@ -18,7 +18,7 @@ def test_doctor_deadman_reports_no_ring(tmp_path: Path, capsys):
 
 def test_wire_without_yes_does_not_write(tmp_path: Path, capsys):
     settings = tmp_path / "settings.json"
-    rc = main(["wire", "--settings", str(settings), "--command", "x -m genesys.hooks.cli"])
+    rc = main(["wire", "--settings", str(settings), "--command", "x -m genesis.hooks.cli"])
     assert rc == 0
     assert not settings.exists()  # deploy gate: nothing written without --yes
     assert "will not write" in capsys.readouterr().out.lower()
@@ -29,8 +29,8 @@ def test_wire_with_yes_writes_merge(tmp_path: Path):
     settings.write_text(json.dumps({"hooks": {"Stop": [{"hooks": [
         {"type": "command", "command": ".../response_validator.py"}]}]}}), encoding="utf-8")
     rc = main(["wire", "--settings", str(settings), "--command",
-               "x -m genesys.hooks.cli", "--yes"])
+               "x -m genesis.hooks.cli", "--yes"])
     assert rc == 0
     out = json.loads(settings.read_text(encoding="utf-8"))
     assert out["hooks"]["Stop"]  # foreign hook survives
-    assert all(hook_wiring_status(settings).values())  # all Genesys events wired
+    assert all(hook_wiring_status(settings).values())  # all Genesis events wired

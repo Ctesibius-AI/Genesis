@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.episode.ownedfile import EpisodeHeader, write_episode_file
-from genesys.extraction.analyst import Episode, prepare_episode
-from genesys.ledger.entry import LedgerEntry, Links, Provenance
+from genesis.episode.ownedfile import EpisodeHeader, write_episode_file
+from genesis.extraction.analyst import Episode, prepare_episode
+from genesis.ledger.entry import LedgerEntry, Links, Provenance
 
 
 def _seed(tmp_path: Path):

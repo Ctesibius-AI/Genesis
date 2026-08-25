@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.ledger.store import read_all
-from genesys.save import fast_path_save
+from genesis.ledger.store import read_all
+from genesis.save import fast_path_save
 
 
 def _save(data_root: Path, *, ts, session_id="s1", cursor_delta=False):

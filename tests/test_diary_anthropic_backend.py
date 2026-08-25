@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from genesys.diary.anthropic_backend import AnthropicBackend
-from genesys.diary.inputs import DiaryInputs, LedgerItem
+from genesis.diary.anthropic_backend import AnthropicBackend
+from genesis.diary.inputs import DiaryInputs, LedgerItem
 
 
 class _FakeMessages:
@@ -36,5 +36,5 @@ def test_system_prompt_is_cached():
 
 def test_module_does_not_import_anthropic_at_top_level():
     import sys
-    import genesys.diary.anthropic_backend  # noqa: F401
+    import genesis.diary.anthropic_backend  # noqa: F401
     assert "anthropic" not in sys.modules  # lazy import only; sandbox never loads the SDK

@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.episode.ownedfile import EpisodeHeader, write_episode_file
-from genesys.extraction.cli import main
-from genesys.ledger.entry import Extracted, LedgerEntry, Links, Provenance
-from genesys.ledger.store import append, read_all
+from genesis.episode.ownedfile import EpisodeHeader, write_episode_file
+from genesis.extraction.cli import main
+from genesis.ledger.entry import Extracted, LedgerEntry, Links, Provenance
+from genesis.ledger.store import append, read_all
 
 
 def _seed(data: Path):

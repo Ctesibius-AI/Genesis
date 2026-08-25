@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pytest
 
-from genesys.tasks.events import (
+from genesis.tasks.events import (
     TaskEvent,
     append_event,
     from_jsonl,

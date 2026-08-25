@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from genesys.graph.engine import AddResult, FakeGraph, GraphEdge, Verdict
+from genesis.graph.engine import AddResult, FakeGraph, GraphEdge, Verdict
 
 
 def _edge(eid, fact="f", episodes=("EP-1",)) -> GraphEdge:

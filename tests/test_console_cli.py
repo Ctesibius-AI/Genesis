@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.console.cli import main
+from genesis.console.cli import main
 
 
 def test_cli_dump_prints_json(tmp_path: Path, capsys):

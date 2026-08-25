@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import random
 
-from genesys.inspection.audit import FalsePassChart, should_audit
+from genesis.inspection.audit import FalsePassChart, should_audit
 
 
 def test_sampler_is_deterministic_under_a_seeded_rng():

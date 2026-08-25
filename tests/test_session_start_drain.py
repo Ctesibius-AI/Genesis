@@ -8,11 +8,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import genesys.extraction.live as live
-from genesys.hooks import cli
-from genesys.hooks.wiring import GENESYS_EVENTS
-from genesys.ledger.entry import Extracted, LedgerEntry, Links, Provenance
-from genesys.ledger.store import append
+import genesis.extraction.live as live
+from genesis.hooks import cli
+from genesis.hooks.wiring import GENESIS_EVENTS
+from genesis.ledger.entry import Extracted, LedgerEntry, Links, Provenance
+from genesis.ledger.store import append
 
 NOW = "2026-08-26T10:00:00+00:00"
 
@@ -48,4 +48,4 @@ def test_drain_never_raises(tmp_path, monkeypatch):
 
 
 def test_stop_is_a_wired_capture_event():
-    assert "Stop" in GENESYS_EVENTS  # crash durability (D-GCW-18)
+    assert "Stop" in GENESIS_EVENTS  # crash durability (D-GCW-18)

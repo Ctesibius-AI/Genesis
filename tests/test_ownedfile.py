@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from genesys.episode.ownedfile import EpisodeHeader, write_episode_file
+from genesis.episode.ownedfile import EpisodeHeader, write_episode_file
 
 
 def _header(eid="EP-2026-08-17.0001") -> EpisodeHeader:

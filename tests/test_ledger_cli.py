@@ -7,9 +7,9 @@ from pathlib import Path
 
 import pytest
 
-from genesys.config import ConfigError, get_data_root
-from genesys.ledger.cli import main
-from genesys.ledger.store import read_all
+from genesis.config import ConfigError, get_data_root
+from genesis.ledger.cli import main
+from genesis.ledger.store import read_all
 
 
 def _fixture(tmp_path: Path) -> Path:
@@ -28,13 +28,13 @@ def _fixture(tmp_path: Path) -> Path:
 
 
 def test_get_data_root_requires_env(monkeypatch):
-    monkeypatch.delenv("GENESYS_DATA", raising=False)
+    monkeypatch.delenv("GENESIS_DATA", raising=False)
     with pytest.raises(ConfigError):
         get_data_root()
 
 
 def test_get_data_root_reads_env(monkeypatch, tmp_path: Path):
-    monkeypatch.setenv("GENESYS_DATA", str(tmp_path))
+    monkeypatch.setenv("GENESIS_DATA", str(tmp_path))
     assert get_data_root() == tmp_path
 
 

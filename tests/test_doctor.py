@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.doctor import doctor_requeue
-from genesys.ledger.entry import Extracted, LedgerEntry, Links, Provenance
-from genesys.ledger.store import append, read_all
+from genesis.doctor import doctor_requeue
+from genesis.ledger.entry import Extracted, LedgerEntry, Links, Provenance
+from genesis.ledger.store import append, read_all
 
 
 def _entry(eid, ts, state=Extracted.NO) -> LedgerEntry:

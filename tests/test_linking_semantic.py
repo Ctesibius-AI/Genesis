@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from genesys.ledger.entry import Extracted, LedgerEntry, Links, Provenance
-from genesys.ledger.store import append, read_all
-from genesys.linking.relatedness import FakeRelatednessScorer
-from genesys.linking.semantic import apply_semantic_links
+from genesis.ledger.entry import Extracted, LedgerEntry, Links, Provenance
+from genesis.ledger.store import append, read_all
+from genesis.linking.relatedness import FakeRelatednessScorer
+from genesis.linking.semantic import apply_semantic_links
 
 
 def _entry(eid, ts, summary, session="s1", **links):

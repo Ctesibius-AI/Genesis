@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.graph.engine import FakeGraph, GraphEdge
-from genesys.journal.journal import read_journal
-from genesys.supervisor.reverts import revert_invalidation, rightful_closure
+from genesis.graph.engine import FakeGraph, GraphEdge
+from genesis.journal.journal import read_journal
+from genesis.supervisor.reverts import revert_invalidation, rightful_closure
 
 
 def test_revert_reopens_marks_contested_and_journals_revert_plus_contest(tmp_path: Path):

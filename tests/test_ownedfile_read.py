@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.episode.ownedfile import EpisodeHeader, read_episode_file, write_episode_file
+from genesis.episode.ownedfile import EpisodeHeader, read_episode_file, write_episode_file
 
 
 def _h(eid="EP-2026-08-17.0001") -> EpisodeHeader:

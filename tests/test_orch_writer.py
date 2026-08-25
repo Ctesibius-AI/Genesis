@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from genesys.orchestration.fleet import SubagentSummary
-from genesys.orchestration.writer import (
+from genesis.orchestration.fleet import SubagentSummary
+from genesis.orchestration.writer import (
     assert_daimon,
     commit_findings,
     reject_subagent_write,

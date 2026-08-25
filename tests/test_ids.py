@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from genesys.ids import (
+from genesis.ids import (
     existing_episode_ids,
     format_episode_id,
     next_episode_id,

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from genesys.tasks.cli import main
-from genesys.tasks.department import tasks_department
-from genesys.tasks.emit import record_created, record_done, record_due_moved
+from genesis.tasks.cli import main
+from genesis.tasks.department import tasks_department
+from genesis.tasks.emit import record_created, record_done, record_due_moved
 
 
 def test_emitters_roundtrip_through_department(tmp_path):

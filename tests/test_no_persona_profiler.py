@@ -8,12 +8,12 @@ from __future__ import annotations
 import importlib
 from pathlib import Path
 
-import genesys
+import genesis
 
 
 def test_persona_package_is_gone():
-    for mod in ("genesys.persona", "genesys.persona.department", "genesys.persona.perceives",
-                "genesys.console.persona"):
+    for mod in ("genesis.persona", "genesis.persona.department", "genesis.persona.perceives",
+                "genesis.console.persona"):
         try:
             importlib.import_module(mod)
         except ModuleNotFoundError:
@@ -22,7 +22,7 @@ def test_persona_package_is_gone():
 
 
 def test_no_perceives_write_path_in_source():
-    src = Path(genesys.__file__).parent
+    src = Path(genesis.__file__).parent
     offenders = []
     for p in src.rglob("*.py"):
         text = p.read_text(encoding="utf-8")

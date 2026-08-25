@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.diary.inputs import DiaryInputs, LedgerItem, gather_ledger_items
-from genesys.ledger.entry import Extracted, LedgerEntry, Links, Provenance
-from genesys.ledger.store import append
+from genesis.diary.inputs import DiaryInputs, LedgerItem, gather_ledger_items
+from genesis.ledger.entry import Extracted, LedgerEntry, Links, Provenance
+from genesis.ledger.store import append
 
 
 def _entry(eid, ts, summary="s", extracted=Extracted.NO, enrichment=None) -> LedgerEntry:

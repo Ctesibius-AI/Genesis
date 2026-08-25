@@ -22,7 +22,7 @@ pytest.importorskip("redislite")
 # ---------------------------------------------------------------------------
 
 def test_real_client_canary_transaction_time_in_window(tmp_path):
-    """Canary: graphiti must stamp expired_at inside the Genesys commit window (§8.1 QA #6).
+    """Canary: graphiti must stamp expired_at inside the Genesis commit window (§8.1 QA #6).
 
     This test costs ONE Anthropic API call. The episode body is chosen so that
     graphiti always extracts at least one entity+edge; a bare one-word body risks
@@ -34,9 +34,9 @@ def test_real_client_canary_transaction_time_in_window(tmp_path):
     SKIP the window assertion (rather than fail) when no edges were expired —
     recording the fact so the operator knows why the canary is neutral.
     """
-    from genesys.graph.factory import assert_transaction_time_in_window, real_client
-    from genesys.graph.adapter import GraphitiEngine
-    from genesys.graph.client import CommitMarker
+    from genesis.graph.factory import assert_transaction_time_in_window, real_client
+    from genesis.graph.adapter import GraphitiEngine
+    from genesis.graph.client import CommitMarker
 
     client = real_client(db_path=str(tmp_path / "canary.db"))
     try:
@@ -81,10 +81,10 @@ def test_real_client_add_episode_roundtrip(tmp_path):
       2. created_in_episode round-trips the same edges (reads from FalkorDB, no API call).
       3. set_edge_attributes + get round-trips a custom `verdict=confirmed` attribute.
     """
-    from genesys.graph.factory import real_client
-    from genesys.graph.adapter import GraphitiEngine
-    from genesys.graph.client import CommitMarker
-    from genesys.graph.engine import Verdict
+    from genesis.graph.factory import real_client
+    from genesis.graph.adapter import GraphitiEngine
+    from genesis.graph.client import CommitMarker
+    from genesis.graph.engine import Verdict
     from datetime import datetime, timezone
 
     def _clock() -> str:
@@ -96,7 +96,7 @@ def test_real_client_add_episode_roundtrip(tmp_path):
 
         # --- Episode 1: one Anthropic API call ---
         result = eng.add_episode(
-            "ep-genesys-1",
+            "ep-genesis-1",
             (
                 "Maria is the CTO of Acme Corp. "
                 "Acme Corp develops autonomous logistics software."
@@ -114,7 +114,7 @@ def test_real_client_add_episode_roundtrip(tmp_path):
             assert isinstance(first.valid_at, str), "valid_at must be an ISO string"
 
         # 2. created_in_episode round-trip (pure FalkorDB read, no API)
-        edges_read = eng.created_in_episode("ep-genesys-1")
+        edges_read = eng.created_in_episode("ep-genesis-1")
         assert edges_read, "created_in_episode returned empty list after add_episode"
         read_ids = {e.edge_id for e in edges_read}
         assert first.edge_id in read_ids, (

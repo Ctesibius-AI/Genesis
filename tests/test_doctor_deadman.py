@@ -4,9 +4,9 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from genesys.doctor import DeadmanReport, doctor_deadman
-from genesys.ledger.entry import Extracted, LedgerEntry, Links, Provenance
-from genesys.ledger.store import append
+from genesis.doctor import DeadmanReport, doctor_deadman
+from genesis.ledger.entry import Extracted, LedgerEntry, Links, Provenance
+from genesis.ledger.store import append
 
 NOW = "2026-08-18T12:00:00+00:00"
 

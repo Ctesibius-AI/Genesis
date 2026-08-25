@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.console.cards import Card, build_cards
-from genesys.journal.journal import JournalEntry, append_journal
-from genesys.ledger.entry import Extracted, LedgerEntry, Links, Provenance
-from genesys.ledger.store import append
+from genesis.console.cards import Card, build_cards
+from genesis.journal.journal import JournalEntry, append_journal
+from genesis.ledger.entry import Extracted, LedgerEntry, Links, Provenance
+from genesis.ledger.store import append
 
 
 def _seed(tmp_path: Path):

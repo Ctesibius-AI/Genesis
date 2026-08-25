@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.console.model import ConsoleModel, console_model, obs1_uncovered
+from genesis.console.model import ConsoleModel, console_model, obs1_uncovered
 
 
 def test_obs1_every_journal_action_maps_to_a_view():

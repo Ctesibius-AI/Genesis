@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.graph.engine import FakeGraph, GraphEdge, Verdict
-from genesys.journal.journal import read_journal
-from genesys.supervisor.verdicts import set_verdict
+from genesis.graph.engine import FakeGraph, GraphEdge, Verdict
+from genesis.journal.journal import read_journal
+from genesis.supervisor.verdicts import set_verdict
 
 
 def test_set_verdict_writes_graph_and_journals(tmp_path: Path):

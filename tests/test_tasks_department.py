@@ -1,8 +1,8 @@
 """Test tasks department (tests/test_tasks_department.py)."""
 from __future__ import annotations
 
-from genesys.tasks.events import TaskEvent, append_event
-from genesys.tasks.department import by_project, tasks_department
+from genesis.tasks.events import TaskEvent, append_event
+from genesis.tasks.department import by_project, tasks_department
 
 
 def _seed(tmp_path, tid, *, due=None, kind="task", project=None, done=False, created_ts="2026-08-01T00:00:00Z"):

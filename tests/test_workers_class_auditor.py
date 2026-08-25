@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from genesys.workers.backend import FakeLLMBackend
-from genesys.workers.class_auditor import (
+from genesis.workers.backend import FakeLLMBackend
+from genesis.workers.class_auditor import (
     CLASS_AUDITOR_PROMPT, ClassAudit, MergeVerdict, class_audit, fragment_merge,
 )
 

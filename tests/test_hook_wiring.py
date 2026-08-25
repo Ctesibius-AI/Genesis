@@ -6,14 +6,14 @@ from pathlib import Path
 
 import pytest
 
-from genesys.hooks.wiring import (
-    GENESYS_EVENTS,
+from genesis.hooks.wiring import (
+    GENESIS_EVENTS,
     hook_wiring_status,
-    is_genesys_hook,
+    is_genesis_hook,
     write_hook_wiring,
 )
 
-CMD = ("GENESYS_DATA_ROOT=/x PYTHONPATH=/y /z/python -m genesys.hooks.cli")
+CMD = ("GENESIS_DATA_ROOT=/x PYTHONPATH=/y /z/python -m genesis.hooks.cli")
 FOREIGN_STOP = {
     "hooks": [{"type": "command", "command": "/usr/bin/python3 .../response_validator.py",
                "timeout": 10}]
@@ -24,14 +24,20 @@ def _write(path: Path, obj: dict) -> None:
     path.write_text(json.dumps(obj), encoding="utf-8")
 
 
-def test_is_genesys_hook_distinguishes_the_foreign_stop_hook():
-    assert is_genesys_hook(CMD) is True
-    assert is_genesys_hook("/usr/bin/python3 .../response_validator.py") is False
+def test_is_genesis_hook_distinguishes_the_foreign_stop_hook():
+    assert is_genesis_hook(CMD) is True
+    assert is_genesis_hook("/usr/bin/python3 .../response_validator.py") is False
+
+
+def test_legacy_genesys_mark_is_still_recognized():
+    # D-GCW-20 migration: pre-rename hooks (genesys.hooks.cli) stay recognized for one release,
+    # so `unwire`/status can clean them (no orphaned hooks after the rename).
+    assert is_genesis_hook("GENESYS_DATA_ROOT=/x /z/python -m genesys.hooks.cli") is True
 
 
 def test_status_reports_missing_file_as_all_unwired(tmp_path: Path):
     status = hook_wiring_status(tmp_path / "nope.json")
-    assert status == {e: False for e in GENESYS_EVENTS}
+    assert status == {e: False for e in GENESIS_EVENTS}
 
 
 def test_write_refuses_without_consent(tmp_path: Path):
@@ -60,20 +66,20 @@ def test_write_merges_without_clobbering_the_foreign_stop_hook(tmp_path: Path):
     _write(p, {"hooks": {"Stop": [FOREIGN_STOP]}, "permissions": {"allow": ["x"]}})
     actions = write_hook_wiring(p, command=CMD, consent=True)
     out = json.loads(p.read_text(encoding="utf-8"))
-    # foreign Stop hook survives (Genesys wires Stop now — D-GCW-18 — but never clobbers it)
+    # foreign Stop hook survives (Genesis wires Stop now — D-GCW-18 — but never clobbers it)
     assert FOREIGN_STOP in out["hooks"]["Stop"]
     assert out["permissions"] == {"allow": ["x"]}
-    # every Genesys event now wired
-    assert all(actions[e] == "added" for e in GENESYS_EVENTS)
-    assert hook_wiring_status(p) == {e: True for e in GENESYS_EVENTS}
+    # every Genesis event now wired
+    assert all(actions[e] == "added" for e in GENESIS_EVENTS)
+    assert hook_wiring_status(p) == {e: True for e in GENESIS_EVENTS}
 
 
 def test_write_is_idempotent(tmp_path: Path):
     p = tmp_path / "settings.json"
     write_hook_wiring(p, command=CMD, consent=True)
     actions = write_hook_wiring(p, command=CMD, consent=True)  # second run
-    assert all(actions[e] == "already-wired" for e in GENESYS_EVENTS)
+    assert all(actions[e] == "already-wired" for e in GENESIS_EVENTS)
     out = json.loads(p.read_text(encoding="utf-8"))
-    for e in GENESYS_EVENTS:
-        gen = [h for grp in out["hooks"][e] for h in grp["hooks"] if is_genesys_hook(h["command"])]
+    for e in GENESIS_EVENTS:
+        gen = [h for grp in out["hooks"][e] for h in grp["hooks"] if is_genesis_hook(h["command"])]
         assert len(gen) == 1  # no duplicate

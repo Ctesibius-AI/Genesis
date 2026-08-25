@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from genesys.orchestration.backends import (
+from genesis.orchestration.backends import (
     agent_sdk_orchestrator,
     langgraph_orchestrator,
     select_orchestrator,
@@ -26,14 +26,14 @@ def test_select_falls_back_then_raises_offline():
 
 
 def test_backends_module_imports_without_deps():
-    import genesys.orchestration.backends as b  # must import stdlib-only
+    import genesis.orchestration.backends as b  # must import stdlib-only
     assert hasattr(b, "select_orchestrator")
 
 
 def test_select_propagates_not_implemented(monkeypatch):
     """When a factory raises NotImplementedError (deps present, wiring stubbed),
     select_orchestrator must propagate it, not fall back (F-1 regression)."""
-    import genesys.orchestration.backends as b
+    import genesis.orchestration.backends as b
 
     def stubbed(*, model=None):
         raise NotImplementedError("wiring stubbed")

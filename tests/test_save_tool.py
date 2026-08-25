@@ -3,10 +3,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesys.ids import episodes_dir
-from genesys.save_tool import save_tool
-from genesys.wal.annotate import is_annotation, save_annotation
-from genesys.wal.record import WalRecord
+from genesis.ids import episodes_dir
+from genesis.save_tool import save_tool
+from genesis.wal.annotate import is_annotation, save_annotation
+from genesis.wal.record import WalRecord
 
 
 def test_manual_save_annotates_current_window_with_owner_jot(tmp_path: Path):

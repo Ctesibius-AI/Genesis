@@ -1,8 +1,8 @@
 """Test task urgency and effective status (tests/test_tasks_urgency.py)."""
 from __future__ import annotations
 
-from genesys.tasks.projection import TaskState
-from genesys.tasks.urgency import (
+from genesis.tasks.projection import TaskState
+from genesis.tasks.urgency import (
     HORIZON_DAYS,
     effective_status,
     is_overdue,

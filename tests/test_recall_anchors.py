@@ -2,10 +2,10 @@
 """Code-inserted diary anchors from ledger links (spec §4.7b; App E delta)."""
 from __future__ import annotations
 
-from genesys.diary.briefing import Briefing
-from genesys.ledger.entry import Extracted, LedgerEntry, Links, Provenance
-from genesys.ledger.store import append
-from genesys.recall.anchors import DiaryAnchor, attach_anchors, resolve_anchors
+from genesis.diary.briefing import Briefing
+from genesis.ledger.entry import Extracted, LedgerEntry, Links, Provenance
+from genesis.ledger.store import append
+from genesis.recall.anchors import DiaryAnchor, attach_anchors, resolve_anchors
 
 
 def _entry(eid, ts, summary, **links):

@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from genesys.orchestration.departments import ListDepartmentStore, run_fleet
-from genesys.orchestration.fleet import SubagentSummary, SubagentTask
-from genesys.orchestration.orchestrator import FakeOrchestrator
+from genesis.orchestration.departments import ListDepartmentStore, run_fleet
+from genesis.orchestration.fleet import SubagentSummary, SubagentTask
+from genesis.orchestration.orchestrator import FakeOrchestrator
 
 
 def _tasks(n):
