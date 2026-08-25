@@ -167,6 +167,20 @@ capture and live providers are separate, explicit, opt-in steps.
 
 ---
 
+## Known limitations
+
+- **Session-start memory line — Claude Code CLI only (VS Code extension hides it).** On session
+  start Genesys shows a one-line memory-state confirmation (e.g. `Genesys: memory loaded — 3 recent
+  sessions`). It is delivered via the SessionStart hook's `systemMessage` field — the correct,
+  user-visible channel in the **Claude Code CLI** (rendered as `SessionStart:startup says: …`). The
+  **VS Code extension currently ignores** SessionStart `systemMessage` (upstream Claude Code bug
+  [#15344](https://github.com/anthropics/claude-code/issues/15344)), so the line does not appear
+  there. Memory itself is unaffected — only the visibility of the confirmation line. Accepted for v1
+  as a documented limitation (waiver **W-GCW-1**), not a mechanism change.
+  *Fast-follow: revisit AC-CONF1 delivery when CC #15344 closes.*
+
+---
+
 ## License
 
 MIT — see [LICENSE](LICENSE). Copyright (c) 2026 Ctesibius-AI.

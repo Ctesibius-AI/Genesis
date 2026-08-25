@@ -56,6 +56,8 @@ def main(argv: list[str] | None = None) -> int:
     sys.stdout.write(
         f"Genesys wired into {workspace} (profile={report['profile']}, mode={report['mode']}).\n"
         f"Store: {report['db_path']} (group {report['group_id']}). CLAUDE.md untouched.\n"
+        "Note: the session-start memory line shows in the Claude Code CLI; the VS Code extension\n"
+        "      currently hides it (upstream CC bug #15344, waiver W-GCW-1).\n"
     )
     return 0
 
