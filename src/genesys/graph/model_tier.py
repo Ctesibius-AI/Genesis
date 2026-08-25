@@ -34,19 +34,24 @@ def build_tiered_anthropic_client(config, *, small_model: str = SMALL_MODEL_DEFA
     honours `small_model`, this wrapper is unnecessary — `request clarification` and drop it.
     """
     from graphiti_core.llm_client.anthropic_client import AnthropicClient
+    from graphiti_core.llm_client.config import ModelSize
 
     standard_model = getattr(config, "model", None) or STANDARD_MODEL_DEFAULT
 
     class _TieredAnthropicClient(AnthropicClient):
+        # Signature matches graphiti-core v0.29.3 AnthropicClient._generate_response exactly
+        # (live-verified 2026-08-26). The base uses `model=self.model` for the request and never
+        # reads config.small_model (C1 confirmed), so swapping self.model for the small tier routes
+        # the call to Haiku (R5).
         async def _generate_response(self, messages, response_model=None, max_tokens=None,
-                                     model_size=None, **kwargs):
+                                     model_size: ModelSize = ModelSize.medium):
             chosen = resolve_model(model_size, standard=standard_model, small=small_model)
             prior = self.model
-            self.model = chosen  # route this call's tier (R5); restore after
+            self.model = chosen
             try:
                 return await super()._generate_response(
                     messages, response_model=response_model, max_tokens=max_tokens,
-                    model_size=model_size, **kwargs)
+                    model_size=model_size)
             finally:
                 self.model = prior
 

@@ -40,17 +40,15 @@ def recall_response(result: RecallResult) -> dict:
 
 
 def build_recall_mcp_server(daemon, *, name: str = "genesys-recall"):  # pragma: no cover - live only
-    """Build the MCP server exposing recall/expand/search over the warm daemon (design §4.2).
+    """Build the recall MCP server over the warm daemon (design §4.2) — read-only, allow-list-scoped.
 
-    Lazy import of the `mcp` SDK (absent in the offline sandbox). Tools are READ-ONLY and return
-    `recall_response(...)` payloads. Transport (stdio/http) is chosen by the caller per D-GCW-1.
+    Uses `mcp.server.fastmcp.FastMCP` — the stable, documented MCP-server API on the `mcp` 1.x SDK
+    line (the `[mcp]` extra pins `<2`, since the 2.x restructure removed FastMCP; live-verified
+    against mcp 1.29.1, 2026-08-26). Lazy-imported: the offline sandbox has no `mcp` SDK — shape
+    responses there via `recall_response()`. Tools are READ-ONLY; the honest-empty verdict
+    (ABSENT/PENDING/DEGRADED) is always in the payload — never a bare [].
     """
-    try:
-        from mcp.server.fastmcp import FastMCP
-    except ImportError as exc:
-        raise RuntimeError(
-            "the recall MCP server needs the 'mcp' extra; offline shape responses via recall_response()"
-        ) from exc
+    from mcp.server.fastmcp import FastMCP
 
     from genesys.recall.tier import Tier
 
