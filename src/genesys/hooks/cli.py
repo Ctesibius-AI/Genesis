@@ -72,6 +72,12 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"error": str(exc)}), file=sys.stdout)
         return 1
 
+    # AC-CONF1 (owner ruling 2026-08-26): the SessionStart confirmation line is USER-VISIBLE via
+    # PLAIN STDOUT. Print it first (plain), then the structured JSON (whose additionalContext diary
+    # stays model-only). Verify-by-eye in the keyed live run.
+    line = result.pop("_confirmation_stdout", "") if isinstance(result, dict) else ""
+    if line:
+        print(line, file=sys.stdout)
     print(json.dumps(result, ensure_ascii=False), file=sys.stdout)
     return 0
 

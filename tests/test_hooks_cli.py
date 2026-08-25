@@ -73,7 +73,7 @@ def _run_main(
     # Read stdout via capsys if provided, otherwise just return exit code
     if capsys is not None:
         captured = capsys.readouterr()
-        result = json.loads(captured.out)
+        result = json.loads(captured.out.strip().splitlines()[-1])  # SessionStart prepends a plain confirmation line (AC-CONF1); JSON is the last line
         return exit_code, result
     return exit_code, {}
 
@@ -252,7 +252,7 @@ def test_cli_default_data_root_is_dot(
     try:
         exit_code = main()
         captured = capsys.readouterr()
-        result = json.loads(captured.out)
+        result = json.loads(captured.out.strip().splitlines()[-1])  # SessionStart prepends a plain confirmation line (AC-CONF1); JSON is the last line
         assert exit_code == 0
     finally:
         os.chdir(old_cwd)

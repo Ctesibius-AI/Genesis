@@ -155,11 +155,14 @@ def dispatch(
         except Exception:  # noqa: BLE001 — down ⇒ unavailable + empty context, start never breaks
             context, available, count = "", False, 0
         return {
-            "systemMessage": confirmation_line(available=available, count=count),  # USER-VISIBLE (D-GCW-15)
             "hookSpecificOutput": {
                 "hookEventName": "SessionStart",
-                "additionalContext": context,  # LLM-only diary content
+                "additionalContext": context,  # LLM-only diary content (never shown to the user)
             },
+            # USER-VISIBLE confirmation line (D-GCW-15 / AC-CONF1) — cli.py prints this to PLAIN
+            # STDOUT (owner ruling 2026-08-26: systemMessage is model-only at SessionStart). Not part
+            # of the CC hook JSON schema; the CLI pops it before emitting the structured output.
+            "_confirmation_stdout": confirmation_line(available=available, count=count),
         }
 
     # ------------------------------------------------------------------ #
