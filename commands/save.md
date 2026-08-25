@@ -11,11 +11,12 @@ user-supplied label, through the single ingestion path (`save_annotation` → th
 Run exactly:
 
 ```
-genesis-save-moment --note "$ARGUMENTS"
+genesis-save-moment --note "$ARGUMENTS" --session-id "$CLAUDE_CODE_SESSION_ID"
 ```
 
-`genesis-save-moment` auto-detects this session's transcript from the working directory and uses
-`$ARGUMENTS` as the entry's jot/label. Report the resulting entry id, or "nothing new to save".
-Do not add commentary.
+Passing `--session-id "$CLAUDE_CODE_SESSION_ID"` (Claude Code exports it to shell commands) selects
+**this** session's transcript by exact id — never a concurrent other project's by mtime (F-06.3
+workspace isolation). `$ARGUMENTS` is the entry's jot/label. Report the resulting entry id, or
+"nothing new to save". Do not add commentary.
 
 *(Runtime wiring — PATH + data-root env — is provisioned by the Genesis installer, BT-8.)*

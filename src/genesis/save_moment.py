@@ -30,30 +30,37 @@ from genesis.wal.record import WalRecord
 from genesis.wal.write_cursor import read_captured_count, write_captured_count
 
 
+def _encoded_project_dir(project_cwd: Path, projects_root: Path) -> Path:
+    """The Claude Code transcript dir for a project: ~/.claude/projects/<cwd with '/'→'-'>."""
+    encoded = str(Path(project_cwd).expanduser().resolve()).replace("/", "-")
+    return projects_root / encoded
+
+
 def find_current_transcript(
     project_cwd: Path,
     *,
     projects_root: Path | None = None,
 ) -> Path | None:
-    """Return the newest .jsonl globally across all projects_root subdirs, or None.
+    """Return the newest .jsonl **within THIS project's** transcript dir, or None (F-06.3).
 
     Claude Code stores transcripts at ~/.claude/projects/<encoded>/*.jsonl where
-    <encoded> = the project cwd with '/' replaced by '-'. The active session is
-    identified reliably by the newest-mtime .jsonl across ALL subdirectories.
+    <encoded> = the project cwd with '/' replaced by '-'. Selection is scoped to that ONE
+    directory — NEVER a global newest-mtime across all projects, which could ingest a
+    concurrent OTHER project's transcript into this workspace's memory (cross-project
+    contamination at the capture door, undercutting the group_id/db_path isolation enforced
+    downstream). Returns None when this project has no transcript — the caller fails loud
+    rather than borrowing a neighbour's.
 
     Args:
-        project_cwd: Kept for back-compat; now advisory only (ignored for selection).
-        projects_root: Override for ~/.claude/projects (injectable for tests).
-
-    Returns:
-        Path to the newest .jsonl by mtime across all subdirs, or None if no .jsonl anywhere.
+        project_cwd: the invoking project's working directory (used to select its dir).
+        projects_root: override for ~/.claude/projects (injectable for tests).
     """
     if projects_root is None:
         projects_root = Path.home() / ".claude" / "projects"
-    if not projects_root.is_dir():
+    project_dir = _encoded_project_dir(project_cwd, projects_root)
+    if not project_dir.is_dir():
         return None
-    # Search recursively across all subdirectories for .jsonl files
-    candidates = list(projects_root.rglob("*.jsonl"))
+    candidates = list(project_dir.glob("*.jsonl"))
     if not candidates:
         return None
     return max(candidates, key=lambda p: p.stat().st_mtime)
@@ -198,22 +205,29 @@ def main() -> None:
     project_cwd = Path(args.project_cwd).expanduser()
     now = args.now or datetime.now(timezone.utc).isoformat()
 
+    # F-06.3 layer 2: resolve the session id from the flag OR CLAUDE_CODE_SESSION_ID (CC exports it
+    # to shell commands) BEFORE any mtime path — old wiring without --session-id gets the safe route.
+    session_id = args.session_id or os.environ.get("CLAUDE_CODE_SESSION_ID", "")
+
     if args.transcript:
         transcript_path: Path | None = Path(args.transcript).expanduser()
-    elif args.session_id:
-        # EXACT: locate the invoking session's own transcript by its id (no cross-terminal
-        # race). Fall back to newest only if the id somehow has no transcript on disk.
-        transcript_path = find_transcript_by_session_id(args.session_id)
+    elif session_id:
+        # EXACT: the invoking session's own transcript by id — no cross-terminal mtime race. If it
+        # has no transcript on disk, REFUSE (never fall to a global newest that could be a neighbour's).
+        transcript_path = find_transcript_by_session_id(session_id)
         if transcript_path is None:
-            transcript_path = find_current_transcript(project_cwd)
+            print(f"save_moment: no transcript for session {session_id!r}; refusing to guess "
+                  "another session's. Pass --transcript to override.")
+            return
     else:
+        # No session id → newest WITHIN this project's dir only (F-06.3), never global.
         transcript_path = find_current_transcript(project_cwd)
+        if transcript_path is None:
+            print("save_moment: cannot identify this session's transcript (no CLAUDE_CODE_SESSION_ID "
+                  "and no transcript in this project's dir). Pass --session-id.")
+            return
 
-    if transcript_path is None:
-        print("save_moment: no transcript found — nothing to save.")
-        return
-
-    session_id = args.session_id or transcript_path.stem
+    session_id = session_id or transcript_path.stem
 
     entry = save_moment(
         data_root,

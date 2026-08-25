@@ -44,6 +44,26 @@ def test_serve_expand_degrades_on_failure():
     assert r.is_empty()  # degraded, not raised
 
 
-def test_build_recall_daemon_is_a_documented_stub():
-    with pytest.raises((RuntimeError, NotImplementedError)):
+def test_serve_degrade_logs_the_exception_before_the_banner(caplog):
+    """F-17.2: a real backend bug isn't hidden behind the honest-empty banner — the traceback is
+    logged at WARNING (with exc_info) BEFORE degrading, so operators can see it."""
+    import logging
+
+    class _Boom(FakeRecallSearch):
+        def semantic(self, query, top_n):
+            raise RuntimeError("graph backend down")
+    d = _daemon(search=_Boom())
+    with caplog.at_level(logging.WARNING, logger="genesis.recall"):
+        r = d.serve_search("q", Tier.FULL)
+    assert r.is_empty()  # still degraded — the caller never breaks
+    recs = [rec for rec in caplog.records if rec.name == "genesis.recall"]
+    assert recs and recs[0].levelno == logging.WARNING
+    assert recs[0].exc_info is not None  # the traceback rode along, not a bare message
+
+
+def test_build_recall_daemon_requires_the_graph_extra_offline():
+    """F-17.1: the daemon is now wired (composes the live graph client + embedder). Offline the
+    'graph' extra is absent, so it raises RuntimeError naming the extra — never a NotImplementedError
+    stub anymore. The warm composition itself is live-only (pragma-no-cover)."""
+    with pytest.raises(RuntimeError, match="graph"):
         build_recall_daemon("/tmp/nope")

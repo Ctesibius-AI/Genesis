@@ -26,6 +26,25 @@ def resolve_model(model_size, *, standard: str, small: str) -> str:
     return small if str(size).strip().lower() == "small" else standard
 
 
+# The params the R5 wrapper's _generate_response override depends on. If graphiti-core's base
+# signature drifts (e.g. a 0.30+ bump), the override is unsafe — F-12.4 guard.
+_EXPECTED_OVERRIDE_PARAMS = frozenset({"messages", "response_model", "max_tokens", "model_size"})
+
+
+def override_signature_ok(anthropic_client_cls) -> bool:
+    """True iff the base `_generate_response` exposes the params the R5 wrapper overrides (F-12.4).
+
+    Offline-testable (pass any class). Used to fail LOUD-then-fall-back rather than run a broken
+    monkeypatch when the pinned graphiti-core signature changes.
+    """
+    import inspect
+    try:
+        params = set(inspect.signature(anthropic_client_cls._generate_response).parameters)
+    except (ValueError, TypeError, AttributeError):
+        return False
+    return _EXPECTED_OVERRIDE_PARAMS <= params
+
+
 def build_tiered_anthropic_client(config, *, small_model: str = SMALL_MODEL_DEFAULT):  # pragma: no cover - live only
     """Build a graphiti AnthropicClient subclass that honours `model_size` (R5).
 
@@ -33,10 +52,23 @@ def build_tiered_anthropic_client(config, *, small_model: str = SMALL_MODEL_DEFA
     signature of graphiti-core v0.29.3 is confirmed at the live run (C1); if upstream already
     honours `small_model`, this wrapper is unnecessary — `request clarification` and drop it.
     """
+    import warnings
+
     from graphiti_core.llm_client.anthropic_client import AnthropicClient
     from graphiti_core.llm_client.config import ModelSize
 
     standard_model = getattr(config, "model", None) or STANDARD_MODEL_DEFAULT
+
+    # F-12.4: if graphiti-core's _generate_response signature has drifted (e.g. a >=0.30 bump), the
+    # R5 override would be unsafe. Warn LOUDLY and fall back to the plain client (standard model) —
+    # honoring "never silently downgrade a tier": extraction runs on Sonnet, no broken monkeypatch.
+    if not override_signature_ok(AnthropicClient):
+        warnings.warn(
+            "graphiti-core AnthropicClient._generate_response signature no longer matches the R5 "
+            "Haiku wrapper; the small-tier routing is DISABLED and extraction runs on the standard "
+            "model. Pin graphiti-core<0.30 or update graph/model_tier.py (F-12.4).",
+            RuntimeWarning, stacklevel=2)
+        return AnthropicClient(config=config)
 
     class _TieredAnthropicClient(AnthropicClient):
         # Signature matches graphiti-core v0.29.3 AnthropicClient._generate_response exactly

@@ -8,7 +8,11 @@ from __future__ import annotations
 
 from enum import Enum
 
-from genesis.graph.model_tier import STANDARD_MODEL_DEFAULT, resolve_model
+from genesis.graph.model_tier import (
+    STANDARD_MODEL_DEFAULT,
+    override_signature_ok,
+    resolve_model,
+)
 
 
 class _Size(str, Enum):
@@ -28,3 +32,27 @@ def test_non_small_stays_standard():
 
 def test_defaults_are_pinned_ids():
     assert STANDARD_MODEL_DEFAULT.startswith("claude-")
+
+
+# --- F-12.4: the override-signature guard (offline; live-only monkeypatch stays uncovered) --- #
+
+def test_override_signature_ok_accepts_the_pinned_shape():
+    """A class whose `_generate_response` exposes the params the R5 wrapper overrides passes."""
+    class _Pinned:
+        def _generate_response(self, messages, response_model=None, max_tokens=None,
+                               model_size=None):  # graphiti-core 0.29.x shape
+            ...
+    assert override_signature_ok(_Pinned) is True
+
+
+def test_override_signature_ok_rejects_drifted_signature():
+    """If upstream drops/renames a param the wrapper needs, the guard returns False — the caller
+    then warns LOUD and falls back to the standard model, never a broken silent monkeypatch."""
+    class _Drifted:
+        def _generate_response(self, messages, response_model=None):  # lost max_tokens/model_size
+            ...
+    assert override_signature_ok(_Drifted) is False
+
+    class _NoMethod:
+        pass
+    assert override_signature_ok(_NoMethod) is False

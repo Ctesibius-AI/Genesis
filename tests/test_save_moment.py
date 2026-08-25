@@ -63,8 +63,9 @@ def test_find_current_transcript_returns_none_when_no_dir(tmp_path: Path):
     assert find_current_transcript(proj, projects_root=tmp_path) is None
 
 
-def test_find_current_transcript_newest_across_different_dirs(tmp_path: Path):
-    """Regression: newest .jsonl must be found even if NOT under project_cwd-encoded dir."""
+def test_find_current_transcript_stays_within_this_project(tmp_path: Path):
+    """F-06.3: find_current_transcript is scoped to THIS project's encoded dir — it must NOT
+    borrow another project's transcript even when that one is newer (the cross-project leak)."""
     # Create two project dirs
     proj_a = Path("/Users/principal/ProjectA")
     proj_b = Path("/Users/principal/ProjectB")
@@ -76,21 +77,20 @@ def test_find_current_transcript_newest_across_different_dirs(tmp_path: Path):
     dir_a.mkdir(parents=True)
     dir_b.mkdir(parents=True)
 
-    # Create older transcript in dir_a
+    # This project's (older) transcript
     old_file = dir_a / "old.jsonl"
     old_file.write_text("{}", encoding="utf-8")
     import os
     os.utime(old_file, (1000, 1000))  # mtime=1000
 
-    # Create newer transcript in dir_b
+    # ANOTHER project's newer transcript (a concurrent terminal)
     new_file = dir_b / "new.jsonl"
     new_file.write_text("{}", encoding="utf-8")
     os.utime(new_file, (2000, 2000))  # mtime=2000
 
-    # Call with proj_a as project_cwd, but newest is in proj_b dir
+    # Scoped to proj_a: returns proj_a's own transcript, never proj_b's newer one.
     result = find_current_transcript(proj_a, projects_root=tmp_path)
-    # Must return the global newest (new_file), not None or old_file
-    assert result == new_file
+    assert result == old_file
 
 
 def test_find_current_transcript_newest_by_mtime_deterministic(tmp_path: Path):
@@ -177,8 +177,11 @@ def test_find_transcript_by_session_id_is_exact(tmp_path: Path):
 
     # By id → mine, exactly (not the newer other):
     assert find_transcript_by_session_id("sess-mine", projects_root=tmp_path) == mine
-    # mtime-guess would wrongly pick the other terminal:
-    assert find_current_transcript(Path("/x"), projects_root=tmp_path) == other
+    # F-06.3: mine's project dir is "-Users-x-Ctesibius-Genesis"; scoped there, not the newer
+    # neighbour under "-Users-x-Ctesibius" — the old mtime-guess would have leaked `other`.
+    assert find_current_transcript(Path("/Users/x/Ctesibius/Genesis"), projects_root=tmp_path) == mine
+    # And a project with no transcript of its own gets None, never a borrowed neighbour:
+    assert find_current_transcript(Path("/x"), projects_root=tmp_path) is None
 
 
 def test_find_transcript_by_session_id_none_cases(tmp_path: Path):
