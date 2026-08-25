@@ -155,14 +155,16 @@ def dispatch(
         except Exception:  # noqa: BLE001 — down ⇒ unavailable + empty context, start never breaks
             context, available, count = "", False, 0
         return {
+            # USER-VISIBLE confirmation line (D-GCW-15 / AC-CONF1). `systemMessage` is the field CC
+            # shows the user at SessionStart (CLI prints "SessionStart:startup says: …"; verified
+            # against v2.1.158, 2026-08-26). ⚠ Known CC bug #15344: the VS Code extension ignores
+            # SessionStart systemMessage — renders in the CLI, not VS Code. Plain stdout is NOT
+            # user-visible at SessionStart here (eye-tested false).
+            "systemMessage": confirmation_line(available=available, count=count),
             "hookSpecificOutput": {
                 "hookEventName": "SessionStart",
                 "additionalContext": context,  # LLM-only diary content (never shown to the user)
             },
-            # USER-VISIBLE confirmation line (D-GCW-15 / AC-CONF1) — cli.py prints this to PLAIN
-            # STDOUT (owner ruling 2026-08-26: systemMessage is model-only at SessionStart). Not part
-            # of the CC hook JSON schema; the CLI pops it before emitting the structured output.
-            "_confirmation_stdout": confirmation_line(available=available, count=count),
         }
 
     # ------------------------------------------------------------------ #

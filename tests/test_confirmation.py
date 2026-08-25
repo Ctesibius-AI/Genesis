@@ -41,22 +41,21 @@ def test_memory_state_counts_distinct_sessions(tmp_path):
     assert available is True and count == 2               # two distinct sessions
 
 
-# --- wired into SessionStart (user-visible via plain stdout; diary model-only) ---
+# --- wired into SessionStart: user-visible via `systemMessage`; diary model-only ---
+# systemMessage is the field CC shows the user at SessionStart (v2.1.158, CLI). additionalContext
+# stays model-only. (⚠ CC bug #15344: the VS Code extension ignores SessionStart systemMessage.)
 
 def test_sessionstart_emits_empty_when_no_memories(tmp_path):
     out = dispatch(START, tmp_path, now=NOW, backend=FakeBackend())
-    # AC-CONF1: the user-visible line rides _confirmation_stdout (cli.py prints it to plain stdout);
-    # the diary stays model-only in additionalContext; never the model-only systemMessage.
-    assert out["_confirmation_stdout"] == EMPTY
-    assert "additionalContext" in out["hookSpecificOutput"]
-    assert "systemMessage" not in out
+    assert out["systemMessage"] == EMPTY
+    assert "additionalContext" in out["hookSpecificOutput"]  # diary stays model-only
 
 
 def test_sessionstart_emits_loaded_with_count(tmp_path):
     _seed(tmp_path, "EP-1", "sess-a")
     _seed(tmp_path, "EP-2", "sess-b")
     out = dispatch(START, tmp_path, now=NOW, backend=FakeBackend())
-    assert "2 recent sessions" in out["_confirmation_stdout"]
+    assert "2 recent sessions" in out["systemMessage"]
 
 
 def test_unavailable_only_from_real_down_path(tmp_path, monkeypatch):
@@ -64,11 +63,11 @@ def test_unavailable_only_from_real_down_path(tmp_path, monkeypatch):
         raise RuntimeError("diary/recall down")
     monkeypatch.setattr(adapter_mod, "session_start_context", _boom)
     out = dispatch(START, tmp_path, now=NOW, backend=FakeBackend())
-    assert out["_confirmation_stdout"] == UNAVAILABLE     # reached ONLY via the failed read
+    assert out["systemMessage"] == UNAVAILABLE               # reached ONLY via the failed read
     assert out["hookSpecificOutput"]["additionalContext"] == ""  # never breaks start
 
 
-def test_cli_prints_confirmation_to_plain_stdout(tmp_path, monkeypatch, capsys):
+def test_cli_output_is_pure_json_carrying_systemMessage(tmp_path, monkeypatch, capsys):
     import io
     import json as _json
 
@@ -77,8 +76,6 @@ def test_cli_prints_confirmation_to_plain_stdout(tmp_path, monkeypatch, capsys):
     monkeypatch.setenv("GENESYS_NOW", NOW)
     monkeypatch.setattr("sys.stdin", io.StringIO(_json.dumps({"hook_event_name": "SessionStart"})))
     assert cli.main([]) == 0
-    lines = capsys.readouterr().out.splitlines()
-    assert lines[0].startswith("Genesys:")              # plain user-visible line FIRST
-    payload = _json.loads(lines[-1])                     # structured JSON is still parseable
+    payload = _json.loads(capsys.readouterr().out)           # whole stdout is valid JSON (no leading line)
+    assert payload["systemMessage"].startswith("Genesys:")   # user-visible line rides systemMessage
     assert payload["hookSpecificOutput"]["hookEventName"] == "SessionStart"
-    assert "_confirmation_stdout" not in payload         # popped from the JSON, not double-emitted
