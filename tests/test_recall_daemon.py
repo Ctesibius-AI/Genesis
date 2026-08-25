@@ -6,7 +6,6 @@ import pytest
 
 from genesys.graph.engine import FakeGraph, GraphEdge, Verdict
 from genesys.linking.relatedness import FakeRelatednessScorer
-from genesys.persona.department import PerceptionDepartment
 from genesys.recall.daemon import RecallDaemon, build_recall_daemon
 from genesys.recall.search_backend import FakeRecallSearch
 from genesys.recall.service import RecallService
@@ -15,8 +14,7 @@ from genesys.recall.tier import Tier
 
 def _daemon(*, search=None, engine=None):
     engine = engine or FakeGraph()
-    svc = RecallService(engine, PerceptionDepartment(), FakeRelatednessScorer(default=0.5),
-                        search=search)
+    svc = RecallService(engine, FakeRelatednessScorer(default=0.5), search=search)
     return RecallDaemon(svc)
 
 
@@ -24,8 +22,7 @@ def test_serve_search_returns_results_when_backend_healthy():
     hit = GraphEdge(edge_id="a", fact="fact a", episodes=["EP-1"], verdict=Verdict.CONFIRMED, type="ABOUT")
     g = FakeGraph(); g.seed(hit)
     search = FakeRecallSearch(); search.set_semantic("q", [hit]); search.set_keyword("q", [hit])
-    d = RecallDaemon(RecallService(g, PerceptionDepartment(),
-                                   FakeRelatednessScorer(default=0.5), search=search))
+    d = RecallDaemon(RecallService(g, FakeRelatednessScorer(default=0.5), search=search))
     assert d.serve_search("q", Tier.FULL).verdict.score == 100
 
 

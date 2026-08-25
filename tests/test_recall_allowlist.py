@@ -9,7 +9,6 @@ from __future__ import annotations
 
 from genesys.graph.engine import FakeGraph, GraphEdge, Verdict
 from genesys.linking.relatedness import FakeRelatednessScorer
-from genesys.persona.department import PerceptionDepartment
 from genesys.recall.allowlist import ALLOWED_EDGE_TYPES, filter_allowed, is_allowed
 from genesys.recall.search_backend import FakeRecallSearch
 from genesys.recall.service import RecallService
@@ -22,8 +21,7 @@ def _edge(eid, fact, *, type, class_=None):
 
 
 def _svc(engine, *, search=None):
-    return RecallService(engine, PerceptionDepartment(), FakeRelatednessScorer(default=0.5),
-                         search=search)
+    return RecallService(engine, FakeRelatednessScorer(default=0.5), search=search)
 
 
 # --- the allow-list itself (pure) ---

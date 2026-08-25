@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from genesys.graph.engine import FakeGraph, GraphEdge, Verdict
 from genesys.linking.relatedness import FakeRelatednessScorer
-from genesys.persona.department import PerceptionDepartment
 from genesys.recall.service import RecallService
 from genesys.recall.tier import Tier
 
@@ -31,6 +30,6 @@ def test_recall_does_not_serve_invalidated_edge():
     g.seed(GraphEdge("live", "current fact", ["EP-1"], verdict=Verdict.CONFIRMED, type="ABOUT"))
     g.seed(GraphEdge("dead", "superseded fact", ["EP-1"], verdict=Verdict.CONFIRMED, type="ABOUT",
                      invalid_at="t1", expired_at="t1"))
-    svc = RecallService(g, PerceptionDepartment(), FakeRelatednessScorer(default=0.5))
+    svc = RecallService(g, FakeRelatednessScorer(default=0.5))
     r = svc.expand("EP-1", Tier.EPISODIC)
     assert [re.edge.edge_id for re in r.edges] == ["live"]     # invalidated edge not resurrected

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from genesys.graph.engine import FakeGraph, GraphEdge, Verdict
 from genesys.linking.relatedness import FakeRelatednessScorer
-from genesys.persona.department import PerceptionDepartment
 from genesys.recall.scorer import EmptyCause
 from genesys.recall.search_backend import FakeRecallSearch
 from genesys.recall.service import RecallService
@@ -20,8 +19,7 @@ def _service(edges_by_query):
             g.seed(e)
         search.set_semantic(q, edges)
         search.set_keyword(q, edges)
-    return RecallService(g, PerceptionDepartment(), FakeRelatednessScorer(default=0.5),
-                         search=search)
+    return RecallService(g, FakeRelatednessScorer(default=0.5), search=search)
 
 
 def test_recall_tool_drives_full_search():

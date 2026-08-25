@@ -9,7 +9,6 @@ Read-only: it never writes, never touches the serial commit lane.
 
 from __future__ import annotations
 
-from genesys.persona.release import ReleaseContext
 from genesys.recall.scorer import Channel, ChannelResult, EmptyCause, score_channels
 from genesys.recall.service import RecallResult, RecallService
 from genesys.recall.tier import Tier
@@ -26,17 +25,15 @@ class RecallDaemon:
     def __init__(self, service: RecallService) -> None:
         self._service = service
 
-    def serve_expand(self, anchor_episode: str, tier: Tier, *,
-                     ctx: ReleaseContext | None = None) -> RecallResult:
+    def serve_expand(self, anchor_episode: str, tier: Tier) -> RecallResult:
         try:
-            return self._service.expand(anchor_episode, tier, ctx=ctx)
+            return self._service.expand(anchor_episode, tier)
         except Exception:  # noqa: BLE001 — degrade to honest-empty, never break the caller
             return _honest_empty()
 
-    def serve_search(self, query: str, tier: Tier, *, ctx: ReleaseContext | None = None,
-                     top_n: int = 5) -> RecallResult:
+    def serve_search(self, query: str, tier: Tier, *, top_n: int = 5) -> RecallResult:
         try:
-            return self._service.search(query, tier, ctx=ctx, top_n=top_n)
+            return self._service.search(query, tier, top_n=top_n)
         except Exception:  # noqa: BLE001 — recall down ⇒ diary + honest-empty (D-SUP-7)
             return _honest_empty()
 

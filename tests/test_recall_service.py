@@ -1,13 +1,16 @@
 # tests/test_recall_service.py
-"""The recall service: fenced, verdict-gated, ranked expand + three-channel search (§4.7b)."""
+"""The recall service: allow-list-scoped, verdict-gated, ranked expand + three-channel search.
+
+BT-4: recall is decoupled from persona — the constructor takes no PerceptionDepartment and the
+read path takes no ReleaseContext/ctx. The perceives-exclusion guarantee now lives in the
+allow-list (test_recall_allowlist.py AC-R1), not a persona fence.
+"""
 from __future__ import annotations
 
 import pytest
 
 from genesys.graph.engine import FakeGraph, GraphEdge, Verdict
 from genesys.linking.relatedness import FakeRelatednessScorer
-from genesys.persona.department import PerceptionDepartment
-from genesys.persona.release import ReleaseContext, closed
 from genesys.recall.scorer import EmptyCause
 from genesys.recall.search_backend import FakeRecallSearch
 from genesys.recall.service import RecallResult, RecallService
@@ -21,8 +24,7 @@ def _edge(eid, fact, ep="EP-1", verdict=Verdict.CONFIRMED, class_=None, type="AB
 
 
 def _svc(engine, *, search=None, scorer=None):
-    return RecallService(engine, PerceptionDepartment(),
-                         scorer or FakeRelatednessScorer(default=0.5), search=search)
+    return RecallService(engine, scorer or FakeRelatednessScorer(default=0.5), search=search)
 
 
 def test_expand_none_tier_returns_empty_no_read():
@@ -43,15 +45,6 @@ def test_expand_returns_ranked_servable_fenced_edges():
     ids = [re.edge.edge_id for re in r.edges]
     assert ids == ["a", "b"]           # quarantined 'q' dropped; ranked alpha>beta
     assert r.verdict is None            # expand is not the honest-empty terminal
-
-
-def test_expand_drops_perceived_of_principal_fail_closed():
-    g = FakeGraph()
-    g.seed(_edge("a", "alpha", "EP-1"))
-    g.seed(_edge("p", "diligence", "EP-1", class_="perceives"))
-    r = _svc(g).expand("EP-1", Tier.DEEP, ctx=closed())  # closed context, fail-closed
-    assert [re.edge.edge_id for re in r.edges] == ["a"]  # perceived dropped
-    assert r.served_anchors == []
 
 
 def test_search_three_channel_score_and_honest_empty():

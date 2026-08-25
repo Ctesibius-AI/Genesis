@@ -9,16 +9,14 @@ the string as context; this never writes the master prompt.
 
 from __future__ import annotations
 
-from genesys.persona.release import ReleaseContext
 from genesys.recall.scorer import EmptyCause
 from genesys.recall.service import RecallResult, RecallService
 from genesys.recall.tier import Tier
 
 
 def recall_tool(service: RecallService, query: str, *, tier: Tier = Tier.FULL,
-                ctx: ReleaseContext | None = None, top_n: int = 5,
-                cause: EmptyCause = EmptyCause.ABSENT) -> RecallResult:
-    return service.search(query, tier, ctx=ctx, top_n=top_n, cause=cause)
+                top_n: int = 5, cause: EmptyCause = EmptyCause.ABSENT) -> RecallResult:
+    return service.search(query, tier, top_n=top_n, cause=cause)
 
 
 def format_for_injection(result: RecallResult) -> str:
