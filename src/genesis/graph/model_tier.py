@@ -11,6 +11,10 @@ so this module imports offline (the subclass needs graphiti-core, absent in the 
 
 from __future__ import annotations
 
+import logging
+
+_log = logging.getLogger("genesis.graph.model_tier")
+
 # Tunable (P-2): the small tier routes to a current Haiku snapshot; the standard tier stays Sonnet.
 SMALL_MODEL_DEFAULT = "claude-haiku-4-5"
 STANDARD_MODEL_DEFAULT = "claude-sonnet-4-6"
@@ -63,27 +67,31 @@ def build_tiered_anthropic_client(config, *, small_model: str = SMALL_MODEL_DEFA
     # R5 override would be unsafe. Warn LOUDLY and fall back to the plain client (standard model) —
     # honoring "never silently downgrade a tier": extraction runs on Sonnet, no broken monkeypatch.
     if not override_signature_ok(AnthropicClient):
-        warnings.warn(
+        msg = (
             "graphiti-core AnthropicClient._generate_response signature no longer matches the R5 "
             "Haiku wrapper; the small-tier routing is DISABLED and extraction runs on the standard "
-            "model. Pin graphiti-core<0.30 or update graph/model_tier.py (F-12.4).",
-            RuntimeWarning, stacklevel=2)
+            "model. Pin graphiti-core<0.30 or update graph/model_tier.py (F-12.4).")
+        # Both channels (F-12.4): warnings.warn is filterable/easy to miss; the log makes the
+        # downgrade visible in operator logs — "never silently downgrade" must actually be seen.
+        warnings.warn(msg, RuntimeWarning, stacklevel=2)
+        _log.warning(msg)
         return AnthropicClient(config=config)
 
     class _TieredAnthropicClient(AnthropicClient):
         # Signature matches graphiti-core v0.29.3 AnthropicClient._generate_response exactly
         # (live-verified 2026-08-26). The base uses `model=self.model` for the request and never
         # reads config.small_model (C1 confirmed), so swapping self.model for the small tier routes
-        # the call to Haiku (R5).
+        # the call to Haiku (R5). **kwargs forwards any ADDITIVE param the base may grow (F-12.4 #3:
+        # the guard catches removed/renamed params; **kwargs keeps additive drift from TypeError-ing).
         async def _generate_response(self, messages, response_model=None, max_tokens=None,
-                                     model_size: ModelSize = ModelSize.medium):
+                                     model_size: ModelSize = ModelSize.medium, **kwargs):
             chosen = resolve_model(model_size, standard=standard_model, small=small_model)
             prior = self.model
             self.model = chosen
             try:
                 return await super()._generate_response(
                     messages, response_model=response_model, max_tokens=max_tokens,
-                    model_size=model_size)
+                    model_size=model_size, **kwargs)
             finally:
                 self.model = prior
 

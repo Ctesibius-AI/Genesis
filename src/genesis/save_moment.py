@@ -15,6 +15,7 @@ No new dependencies; stdlib + internal genesis modules only.
 from __future__ import annotations
 
 import argparse
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -31,8 +32,13 @@ from genesis.wal.write_cursor import read_captured_count, write_captured_count
 
 
 def _encoded_project_dir(project_cwd: Path, projects_root: Path) -> Path:
-    """The Claude Code transcript dir for a project: ~/.claude/projects/<cwd with '/'→'-'>."""
-    encoded = str(Path(project_cwd).expanduser().resolve()).replace("/", "-")
+    """The Claude Code transcript dir for a project: ~/.claude/projects/<cwd with '/'→'-'>.
+
+    Deliberately NOT ``.resolve()``d: Claude Code encodes the RAW cwd (symlinks unfollowed), so
+    resolving here would diverge from CC's dir name under a symlinked working dir and miss the
+    transcript (fail-loud-refuse — safe, but wrong). ``expanduser`` only, to match CC exactly.
+    """
+    encoded = str(Path(project_cwd).expanduser()).replace("/", "-")
     return projects_root / encoded
 
 
