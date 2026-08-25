@@ -146,16 +146,20 @@ def dispatch(
                 drain()
             except LockHeld:
                 pass
-        context = session_start_context(
-            data_root,
-            now_iso=now,
-            backend=backend,
-        )
+        # D-GCW-15 / AC-CONF1: compute the diary (LLM-only) AND the user-visible confirmation line.
+        # A failed read is the DEGRADED "unavailable" path — never breaks start (AC-D2 posture).
+        from genesys.hooks.confirmation import confirmation_line, memory_state
+        try:
+            context = session_start_context(data_root, now_iso=now, backend=backend)
+            available, count = memory_state(data_root)
+        except Exception:  # noqa: BLE001 — down ⇒ unavailable + empty context, start never breaks
+            context, available, count = "", False, 0
         return {
+            "systemMessage": confirmation_line(available=available, count=count),  # USER-VISIBLE (D-GCW-15)
             "hookSpecificOutput": {
                 "hookEventName": "SessionStart",
-                "additionalContext": context,
-            }
+                "additionalContext": context,  # LLM-only diary content
+            },
         }
 
     # ------------------------------------------------------------------ #

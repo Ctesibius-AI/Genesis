@@ -72,3 +72,34 @@ def write_hook_wiring(settings_path: Path, *, command: str,
     Path(settings_path).write_text(
         json.dumps(settings, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return actions
+
+
+def _group_has_genesys(grp) -> bool:
+    return isinstance(grp, dict) and any(
+        isinstance(h, dict) and is_genesys_hook(h.get("command", "")) for h in grp.get("hooks", []))
+
+
+def unwire_hooks(settings_path: Path, *, events: tuple[str, ...] = GENESYS_EVENTS) -> dict[str, str]:
+    """Remove ONLY Genesys hook groups (AC-I3 uninstall); foreign hooks survive untouched.
+
+    A Genesys group is one whose command carries the `genesys.hooks.cli` mark. Non-Genesys groups
+    (e.g. a foreign Stop → response_validator hook) are preserved. Empty event keys are dropped.
+    """
+    settings = _load(settings_path)
+    hooks = settings.get("hooks", {})
+    if not isinstance(hooks, dict):
+        return {}
+    actions: dict[str, str] = {}
+    for event in events:
+        groups = hooks.get(event, [])
+        if not isinstance(groups, list):
+            continue
+        kept = [g for g in groups if not _group_has_genesys(g)]
+        actions[event] = "removed" if len(kept) < len(groups) else "absent"
+        if kept:
+            hooks[event] = kept
+        else:
+            hooks.pop(event, None)
+    Path(settings_path).write_text(
+        json.dumps(settings, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return actions

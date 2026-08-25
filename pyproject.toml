@@ -21,6 +21,8 @@ genesys-hook = "genesys.hooks.cli:main"
 genesys-worker = "genesys.extraction.worker_cli:main"
 genesys-backfill = "genesys.backfill.cli:main"
 genesys-save-moment = "genesys.save_moment:main"
+genesys-install = "genesys.install.cli:main"
+genesys-recall-mcp = "genesys.recall.mcp_server:main"
 
 [project.optional-dependencies]
 dev = [
@@ -36,6 +38,9 @@ web = [
 graph = [
     "graphiti-core>=0.29.2",
     "falkordblite>=0.10.0",
+]
+mcp = [
+    "mcp>=1.0",
 ]
 orchestration = [
     "claude-agent-sdk>=0.1.0",
