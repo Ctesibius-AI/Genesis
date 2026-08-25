@@ -486,9 +486,11 @@ def build_graphiti_client(
     # Build FalkorDriver
     driver = FalkorDriver(falkor_db=async_falkor, database=group_id)
 
-    # LLM client
-    cfg = LLMConfig(api_key=api_key, model="claude-sonnet-4-6")
-    llm = AnthropicClient(config=cfg)
+    # LLM client — R9 (D-GCW-8): low temperature for deterministic extraction. R5 (D-GCW-8): the
+    # tiered wrapper routes small-tier calls to Haiku (graphiti-core ignores small_model upstream).
+    from genesys.graph.model_tier import STANDARD_MODEL_DEFAULT, build_tiered_anthropic_client
+    cfg = LLMConfig(api_key=api_key, model=STANDARD_MODEL_DEFAULT, temperature=0.0)
+    llm = build_tiered_anthropic_client(cfg)
 
     # Graphiti instance
     embedder = FastEmbedEmbedder()

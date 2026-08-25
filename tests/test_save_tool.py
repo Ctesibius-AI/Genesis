@@ -19,7 +19,7 @@ def test_manual_save_annotates_current_window_with_owner_jot(tmp_path: Path):
     assert e.provenance.span_start == "2026-08-18T10:00:00+00:00"  # current window start = last cursor
     assert e.provenance.span_end == "2026-08-18T11:00:00+00:00"
     assert e.summary == "save this, because it's the decision"     # owner-authored jot
-    assert (e.enrichment or {}).get("salience") is True            # deliberate significance
+    assert "salience" not in (e.enrichment or {})                  # BT-7 / D-GCW-11: flag removed
     # same door => no owned copy
     assert not episodes_dir(tmp_path).exists() or list(episodes_dir(tmp_path).glob("*.md")) == []
 

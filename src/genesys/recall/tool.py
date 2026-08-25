@@ -22,6 +22,8 @@ def recall_tool(service: RecallService, query: str, *, tier: Tier = Tier.FULL,
 def format_for_injection(result: RecallResult) -> str:
     v = result.verdict
     if v is not None and not v.served():
+        if v.cause is EmptyCause.DEGRADED:
+            return "Recall: memory unavailable (recall is down) — not an empty result."
         if v.cause is EmptyCause.PENDING:
             return "Recall: matched a just-saved entry not yet extracted (queue lag) — no graph facts yet."
         return "Recall: I don't have anything related."

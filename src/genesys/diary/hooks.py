@@ -13,11 +13,17 @@ from pathlib import Path
 
 from genesys.diary.backend import DiaryBackend
 from genesys.diary.compiler import compile_diary
+from genesys.recall.anchors import attach_anchors, resolve_anchors
 from genesys.save import fast_path_save
 
 
 def session_start_context(data_root: Path, *, now_iso: str, backend: DiaryBackend, **compile_kw) -> str:
-    return compile_diary(data_root, now_iso=now_iso, backend=backend, **compile_kw).render()
+    # BT-10 / AC-A1 (§4.5): attach code-inserted anchors post-synthesis so recall `expand` can
+    # resolve a briefing anchor's episodes. attach_anchors marks ONLY anchors whose name already
+    # appears in the briefing (safe — never LLM-emitted ids), and returns a new Briefing (DR-10).
+    briefing = compile_diary(data_root, now_iso=now_iso, backend=backend, **compile_kw)
+    briefing = attach_anchors(briefing, resolve_anchors(data_root))
+    return briefing.render()
 
 
 def precompact_flush(

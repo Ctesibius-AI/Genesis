@@ -3,8 +3,9 @@
 Assistant-invocable: the Daimon calls save_tool when the owner says "save this, because X."
 It annotates the CURRENT window (from the session's last saved cursor to now) with the
 owner-authored jot, through the SAME annotation door (save_annotation) as the automatic hook
-trigger. The window start reuses Plan 1's latest_span_end_for_session (NOT forked). Salience is
-set — the manual save's remaining merit is deliberate significance-marking (§2.2, F1).
+trigger. The window start reuses Plan 1's latest_span_end_for_session (NOT forked). The manual
+save's value is the owner-authored jot/label on a deliberate flush — `/save` = archival, not
+curation (D-GCW-11): the dead significance flag was removed.
 """
 
 from __future__ import annotations
@@ -27,4 +28,4 @@ def save_tool(data_root: Path, *, jot: str, session_id: str, now: str,
     cursor = latest_span_end_for_session(data_root, session_id)
     return save_annotation(data_root, start_ts=cursor, end_ts=now, jot=jot,
                            session_id=session_id, speakers=speakers,
-                           record=record, salience=True)
+                           record=record)

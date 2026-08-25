@@ -135,7 +135,7 @@ def test_save_moment_creates_salient_annotation(tmp_path: Path):
     )
     assert entry is not None
     assert is_annotation(entry) is True
-    assert entry.enrichment.get("salience") is True
+    assert "salience" not in (entry.enrichment or {})
     assert entry.summary == note
     entries = read_all(data_root)
     assert len(entries) == 1
@@ -219,7 +219,7 @@ def test_cli_main_uses_exact_session_transcript(tmp_path: Path, monkeypatch, cap
     ])
     main()
     out = capsys.readouterr().out
-    assert "saved (salient)" in out
+    assert "saved" in out
     entries = read_all(data_root)
     assert len(entries) == 1
     assert entries[0].links.session_id == "sess-mine"  # attributed to MY session
@@ -245,11 +245,11 @@ def test_cli_main_saves_and_prints(tmp_path: Path, monkeypatch, capsys):
     ])
     main()
     out = capsys.readouterr().out
-    assert "saved (salient)" in out, f"CLI must confirm the save; got: {out!r}"
+    assert "saved" in out, f"CLI must confirm the save; got: {out!r}"
     entries = read_all(data_root)
     assert len(entries) == 1
     assert is_annotation(entries[0]) is True
-    assert (entries[0].enrichment or {}).get("salience") is True
+    assert "salience" not in (entries[0].enrichment or {})
 
 
 def test_cli_main_extract_runs_the_extraction_team(tmp_path: Path, monkeypatch, capsys):
@@ -275,7 +275,7 @@ def test_cli_main_extract_runs_the_extraction_team(tmp_path: Path, monkeypatch, 
     ])
     main()
     out = capsys.readouterr().out
-    assert "saved (salient)" in out
+    assert "saved" in out
     assert calls, "extraction team (run_once) must run immediately after the save"
     assert str(calls["data_root"]) == str(data_root)
     assert calls["now"] == "2026-08-19T10:00:00+00:00"
@@ -298,5 +298,5 @@ def test_cli_main_no_extract_only_queues(tmp_path: Path, monkeypatch, capsys):
     ])
     main()
     out = capsys.readouterr().out
-    assert "saved (salient)" in out
+    assert "saved" in out
     assert called["n"] == 0, "--no-extract must NOT run the extraction team"

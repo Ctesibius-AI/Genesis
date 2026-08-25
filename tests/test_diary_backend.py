@@ -4,9 +4,11 @@ from genesys.diary.backend import SECTION_HEADERS, FakeBackend
 from genesys.diary.inputs import DiaryInputs, LedgerItem
 
 
-def test_headers_are_the_five_fixed_sections_in_order():
+def test_headers_are_the_fixed_sections_in_order():
+    # BT-10: ANCHORS appended last — code-inserted anchors are rendered but never LLM-emitted.
     assert SECTION_HEADERS == (
         "TOP OF MIND", "OPEN THREADS", "COMMITMENTS", "RECENT SESSIONS", "OPEN QUESTIONS",
+        "ANCHORS",
     )
 
 

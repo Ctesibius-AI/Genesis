@@ -24,7 +24,7 @@ _SAVE_FIELDS = (
     "raw_span", "summary", "session_id", "speakers",
     "span_start", "span_end", "ts",
 )
-_SAVE_OPTIONAL = ("source_transcript_ref", "salience", "prev", "continues")
+_SAVE_OPTIONAL = ("source_transcript_ref", "prev", "continues")
 
 
 def _cmd_save(args: argparse.Namespace) -> int:

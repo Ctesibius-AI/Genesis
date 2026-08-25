@@ -14,6 +14,7 @@ from genesys.diary.inputs import DiaryInputs
 
 SECTION_HEADERS: tuple[str, ...] = (
     "TOP OF MIND", "OPEN THREADS", "COMMITMENTS", "RECENT SESSIONS", "OPEN QUESTIONS",
+    "ANCHORS",  # BT-10: code-inserted diary anchors (attached post-synthesis; never LLM-emitted)
 )
 
 

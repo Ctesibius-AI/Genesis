@@ -121,7 +121,7 @@ def test_capture_once_full_flow(tmp_path: Path) -> None:
     )
     assert entry is not None, "save_moment must return a LedgerEntry"
     assert is_annotation(entry), "save_moment must create an annotation entry"
-    assert entry.enrichment.get("salience") is True, "save_moment must mark the entry salient"
+    assert "salience" not in (entry.enrichment or {})  # BT-7: salience flag removed
 
     # ------------------------------------------------------------------ #
     # Assertion B: exactly 1 annotation; window has each reply 1x         #
@@ -210,7 +210,7 @@ def test_save_moment_without_prior_hooks(tmp_path: Path) -> None:
     )
     assert entry is not None
     assert is_annotation(entry)
-    assert entry.enrichment.get("salience") is True
+    assert "salience" not in (entry.enrichment or {})
 
     entries = read_all(data_root)
     assert len(entries) == 1

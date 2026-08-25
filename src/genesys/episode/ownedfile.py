@@ -25,7 +25,6 @@ class EpisodeHeader:
     span_end: str
     speakers: list[str] = field(default_factory=list)
     source_transcript_ref: str = ""
-    salience: bool = False
     redactions: list[dict] = field(default_factory=list)
 
 

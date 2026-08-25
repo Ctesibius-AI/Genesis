@@ -28,14 +28,14 @@ class RecallDaemon:
     def serve_expand(self, anchor_episode: str, tier: Tier) -> RecallResult:
         try:
             return self._service.expand(anchor_episode, tier)
-        except Exception:  # noqa: BLE001 — degrade to honest-empty, never break the caller
-            return _honest_empty()
+        except Exception:  # noqa: BLE001 — recall DOWN ⇒ honest-empty DEGRADED (AC-R2), never break the caller
+            return _honest_empty(EmptyCause.DEGRADED)
 
     def serve_search(self, query: str, tier: Tier, *, top_n: int = 5) -> RecallResult:
         try:
             return self._service.search(query, tier, top_n=top_n)
-        except Exception:  # noqa: BLE001 — recall down ⇒ diary + honest-empty (D-SUP-7)
-            return _honest_empty()
+        except Exception:  # noqa: BLE001 — recall DOWN ⇒ diary + honest-empty DEGRADED (D-SUP-7, AC-R2)
+            return _honest_empty(EmptyCause.DEGRADED)
 
 
 def build_recall_daemon(data_root, *, db_path: str | None = None, env=None) -> RecallDaemon:

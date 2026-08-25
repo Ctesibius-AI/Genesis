@@ -21,7 +21,6 @@ from genesys.wal.store import append_delta
 
 def append_and_annotate(data_root: Path, *, capture_result: CaptureResult, cursor: str,
                         now: str, session_id: str, speakers: list[str], jot: str,
-                        salience: bool = False,
                         annotate: bool = True) -> LedgerEntry | None:
     """Append both rings then (optionally) annotate the (cursor, now) memory-grade window.
 
@@ -46,4 +45,4 @@ def append_and_annotate(data_root: Path, *, capture_result: CaptureResult, curso
         return None  # WAL rings grown; no ledger queue item
     return save_annotation(data_root, start_ts=cursor, end_ts=now, jot=jot,
                            session_id=session_id, speakers=speakers,
-                           record=WalRecord.MEMORY_GRADE, salience=salience)
+                           record=WalRecord.MEMORY_GRADE)

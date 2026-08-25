@@ -29,7 +29,7 @@ def test_annotation_is_a_window_not_a_copy(tmp_path: Path):
     assert annotation_record(got) is WalRecord.MEMORY_GRADE
     assert got.provenance.span_start == "2026-08-18T10:00:00+00:00"
     assert got.provenance.span_end == "2026-08-18T11:00:00+00:00"
-    assert got.enrichment.get("salience") is False
+    assert "salience" not in (got.enrichment or {})  # BT-7: salience flag removed
 
 
 def test_jot_is_scrubbed_as_free_text(tmp_path: Path):
@@ -50,13 +50,13 @@ def test_record_choice_is_recorded(tmp_path: Path):
     assert annotation_record(got) is WalRecord.FLIGHT_RECORDER
 
 
-def test_salience_survives_round_trip(tmp_path: Path):
+def test_salience_flag_removed(tmp_path: Path):
+    # D-GCW-11 / BT-7: the dead salience flag is gone — annotations carry no salience key.
     e = save_annotation(tmp_path, start_ts="", end_ts="2026-08-18T11:00:00+00:00",
-                        jot="j", session_id="s1", speakers=["the principal"], salience=True)
-    assert e.enrichment.get("salience") is True
-    # Prove salience survives ledger round-trip
+                        jot="j", session_id="s1", speakers=["the principal"])
+    assert "salience" not in (e.enrichment or {})
     got = read_all(tmp_path)[0]
-    assert got.enrichment.get("salience") is True
+    assert "salience" not in (got.enrichment or {})
 
 
 def test_consecutive_annotations_are_structurally_chained(tmp_path: Path):

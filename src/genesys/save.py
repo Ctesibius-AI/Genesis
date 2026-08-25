@@ -30,7 +30,6 @@ def fast_path_save(
     span_end: str,
     ts: str,
     source_transcript_ref: str = "",
-    salience: bool = False,
     prev: str | None = None,
     continues: str | None = None,
     cursor_delta: bool = False,
@@ -57,7 +56,6 @@ def fast_path_save(
         span_end=span_end,
         speakers=list(speakers),
         source_transcript_ref=source_transcript_ref,
-        salience=salience,
     )
     write_episode_file(data_root, header, raw_span)  # files-first (DR-24), scrubs raw
 

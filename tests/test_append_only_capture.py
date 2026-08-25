@@ -221,7 +221,7 @@ def test_save_moment_still_creates_salient_annotation(tmp_path: Path):
     )
     assert entry is not None
     assert is_annotation(entry)
-    assert entry.enrichment.get("salience") is True
+    assert "salience" not in (entry.enrichment or {})
     assert entry.summary == "important decision captured"
     entries = read_all(data_root)
     assert len(entries) == 1

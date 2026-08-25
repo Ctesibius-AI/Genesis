@@ -167,7 +167,6 @@ def save_moment(
         session_id=session_id,
         speakers=list(speakers),
         record=WalRecord.MEMORY_GRADE,
-        salience=True,
     )
 
 
@@ -175,7 +174,7 @@ def main() -> None:
     """CLI entry point for genesys-save-moment."""
     parser = argparse.ArgumentParser(
         prog="genesys-save-moment",
-        description="Capture the current session window as a SALIENT annotation.",
+        description="Capture the current session window as a labelled annotation (/save).",
     )
     parser.add_argument("--note", default="",
                         help="Reason / label for this save (used as the entry's jot)")
@@ -226,7 +225,7 @@ def main() -> None:
     if entry is None:
         print("save_moment: nothing new to save.")
         return
-    print(f"save_moment: {entry.entry_id} saved (salient)")
+    print(f"save_moment: {entry.entry_id} saved")
 
     if args.extract:
         # Owner model: save -> queue -> the extraction team runs IMMEDIATELY, so the facts +

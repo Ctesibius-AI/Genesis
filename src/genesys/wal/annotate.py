@@ -31,8 +31,7 @@ def annotation_record(entry: LedgerEntry) -> WalRecord:
 
 def save_annotation(data_root: Path, *, start_ts: str, end_ts: str, jot: str,
                     session_id: str, speakers: list[str],
-                    record: WalRecord = WalRecord.MEMORY_GRADE,
-                    salience: bool = False) -> LedgerEntry:
+                    record: WalRecord = WalRecord.MEMORY_GRADE) -> LedgerEntry:
     """Append a ledger annotation over the record — a window, not a copy (DR-43)."""
     entry = LedgerEntry(
         entry_id=next_episode_id(data_root, end_ts[:10]),
@@ -42,7 +41,7 @@ def save_annotation(data_root: Path, *, start_ts: str, end_ts: str, jot: str,
                               speakers=list(speakers)),
         links=Links(session_id=session_id),
         extracted=Extracted.NO,
-        enrichment={"annotation": True, "record": record.value, "salience": salience},
+        enrichment={"annotation": True, "record": record.value},
     )
     # Mirror fast_path_save's structural-linking step (spec §4.6, DR-09): derive prev/next
     # from the immediately-prior committed entry and backfill its next in place.

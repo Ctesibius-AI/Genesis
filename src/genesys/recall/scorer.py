@@ -24,6 +24,7 @@ class Channel(str, Enum):
 class EmptyCause(str, Enum):
     ABSENT = "absent"      # earned nothing — all three channels genuinely empty
     PENDING = "pending"    # matched a not-yet-extracted entry (queue lag), not absence
+    DEGRADED = "degraded"  # recall/store is DOWN (BT-5/SUB-2, AC-R2) — down ≠ empty; never confabulate
 
 
 @dataclass
