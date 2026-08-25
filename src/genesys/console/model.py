@@ -38,7 +38,7 @@ ACTION_TO_VIEW: dict[str, str] = {
     # recovery
     "snapshot": "recovery", "snapshot-verify": "recovery", "restore": "recovery", "rebuild": "recovery",
     # infra
-    "worker-error": "infra", "lock-violation": "infra",
+    "worker-error": "infra", "lock-violation": "infra", "stale-lock-cleared": "infra",
 }
 
 

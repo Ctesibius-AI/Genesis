@@ -25,7 +25,7 @@ def _service(edges_by_query):
 
 
 def test_recall_tool_drives_full_search():
-    hit = GraphEdge(edge_id="a", fact="PHR008 issued", episodes=["EP-9"], verdict=Verdict.CONFIRMED)
+    hit = GraphEdge(edge_id="a", fact="PHR008 issued", episodes=["EP-9"], verdict=Verdict.CONFIRMED, type="ABOUT")
     r = recall_tool(_service({"invoicing": [hit]}), "invoicing")
     assert r.verdict.score == 100
     assert [re.edge.edge_id for re in r.edges] == ["a"]
@@ -46,6 +46,6 @@ def test_recall_tool_pending_formats_queue_lag_not_absence():
 
 
 def test_format_labels_unverified_edges():
-    e = GraphEdge(edge_id="a", fact="draft fact", episodes=["EP-1"], verdict=Verdict.PROVISIONAL)
+    e = GraphEdge(edge_id="a", fact="draft fact", episodes=["EP-1"], verdict=Verdict.PROVISIONAL, type="ABOUT")
     r = recall_tool(_service({"q": [e]}), "q")
     assert "[unverified]" in format_for_injection(r)

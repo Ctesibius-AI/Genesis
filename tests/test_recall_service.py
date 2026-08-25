@@ -14,8 +14,10 @@ from genesys.recall.service import RecallResult, RecallService
 from genesys.recall.tier import Tier
 
 
-def _edge(eid, fact, ep="EP-1", verdict=Verdict.CONFIRMED, class_=None):
-    return GraphEdge(edge_id=eid, fact=fact, episodes=[ep], verdict=verdict, class_=class_)
+def _edge(eid, fact, ep="EP-1", verdict=Verdict.CONFIRMED, class_=None, type="ABOUT"):
+    # Post-ontology (BT-6/D-GCW-14), every real edge carries an allow-listed relation type;
+    # an untyped edge is unclassifiable and excluded by the fail-closed allow-list (BT-3).
+    return GraphEdge(edge_id=eid, fact=fact, episodes=[ep], verdict=verdict, class_=class_, type=type)
 
 
 def _svc(engine, *, search=None, scorer=None):

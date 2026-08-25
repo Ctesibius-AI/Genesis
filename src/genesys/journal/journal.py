@@ -26,7 +26,7 @@ JOURNAL_ACTIONS: frozenset[str] = frozenset({
     # recovery
     "snapshot", "snapshot-verify", "restore", "rebuild",
     # infra
-    "worker-error", "lock-violation",
+    "worker-error", "lock-violation", "stale-lock-cleared",
 })
 
 

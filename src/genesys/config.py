@@ -58,6 +58,48 @@ def get_data_root() -> Path:
     return Path(raw)
 
 
+# --- Per-workspace graph store (D-GCW-2: physical + logical isolation) ------ #
+#
+# Defense-in-depth per-workspace isolation: a dedicated graph file path (physical
+# wall) and a unique group_id (logical wall). Both are env-pinned and fail-loud —
+# an unset persistent path must NOT silently fall back to an ephemeral /tmp graph
+# (the data-loss trap at graphiti_backend.build_graphiti_client). 12-Factor: env
+# is the source; a missing value is a loud refusal, never a guess.
+
+DB_PATH_ENV = "GENESYS_DB_PATH"
+GROUP_ID_ENV = "GENESYS_GROUP_ID"
+
+
+def get_db_path() -> Path:
+    """Return the persistent graph store path from ``GENESYS_DB_PATH`` (D-GCW-2).
+
+    No silent default: an unset path used to fall back to ``tempfile.mkdtemp`` — an
+    ephemeral /tmp graph that vanishes, silently losing memory. Refuse instead.
+    """
+    raw = os.environ.get(DB_PATH_ENV)
+    if not raw:
+        raise ConfigError(
+            f"{DB_PATH_ENV} is not set. Genesys refuses to open an ephemeral /tmp "
+            "graph; set a persistent per-workspace graph store path."
+        )
+    return Path(raw)
+
+
+def get_group_id() -> str:
+    """Return the logical isolation group from ``GENESYS_GROUP_ID`` (D-GCW-2).
+
+    The logical wall between workspaces sharing a backend. Env-pinned, fail-loud:
+    an unset group_id must not silently pool this workspace into a default graph.
+    """
+    raw = os.environ.get(GROUP_ID_ENV)
+    if not raw or not raw.strip():
+        raise ConfigError(
+            f"{GROUP_ID_ENV} is not set. Genesys refuses a default group_id; set an "
+            "explicit per-workspace logical isolation group."
+        )
+    return raw.strip()
+
+
 # --- Diary defaults (P2; ratified §26.0 / App E) --------------------------- #
 
 DIARY_WINDOW_DAYS = 6

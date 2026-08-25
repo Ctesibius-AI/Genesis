@@ -125,6 +125,7 @@ def _entity_edge_to_client_edge(e: EntityEdge) -> ClientEdge:
         invalid_at=_to_iso(e.invalid_at),
         expired_at=_to_iso(e.expired_at),
         attributes=dict(e.attributes or {}),
+        type=getattr(e, "name", None),  # BT-6: the graphiti relation type, for the recall allow-list
     )
 
 
@@ -191,14 +192,21 @@ class GraphitiCoreClient:
                 last_n=PREVIOUS_EPISODE_WINDOW,
                 group_ids=[self._group_id],
             )
+            # BT-6 / AC-G1 (D-GCW-14): feed speaker turns as EpisodeType.message and pass the
+            # ontology so graphiti classifies into typed nodes + the 8 named relations (not a
+            # generic Entity/RELATES_TO blob). The edge_type_map names double as the recall
+            # allow-list (name once — graph.ontology is the single source).
+            from genesys.graph.ontology import build_edge_type_map, build_entity_types
             result = await self._g.add_episode(
                 name=name,
                 episode_body=body,
                 reference_time=ref_dt,
-                source=EpisodeType.text,
+                source=EpisodeType.message,
                 source_description="genesys",
                 group_id=self._group_id,
                 previous_episode_uuids=[ep.uuid for ep in prev],
+                entity_types=build_entity_types(),
+                edge_type_map=build_edge_type_map(),
             )
             # Store name → graphiti episode UUID so edges_for_episode can look it up.
             # graphiti stores episode UUIDs (not names) in edge.episodes arrays.
@@ -294,6 +302,9 @@ class GraphitiCoreClient:
             EdgeSearchMethod,
             SearchConfig,
         )
+        from graphiti_core.search.search_filters import SearchFilters  # noqa: PLC0415
+
+        from genesys.graph.ontology import ALLOWED_EDGE_TYPES
 
         edge_method = EdgeSearchMethod(method)
         config = SearchConfig(
@@ -303,12 +314,17 @@ class GraphitiCoreClient:
             ),
             limit=top_n,
         )
+        # BT-3 / D-GCW-7 (AC-R1, red-line): scope the graph query to the CLOSED allow-list so a
+        # non-memory edge (e.g. a stray `perceives`/generic edge) is never retrieved. This is the
+        # primary leak-guard; the RecallService also post-filters by type (defence-in-depth).
+        edge_filter = SearchFilters(edge_types=sorted(ALLOWED_EDGE_TYPES))
 
         async def _search() -> list[ClientEdge]:
             results = await self._g.search_(
                 query=query,
                 config=config,
                 group_ids=[self._group_id],
+                search_filter=edge_filter,
             )
             return [_entity_edge_to_client_edge(e) for e in (results.edges or [])][:top_n]
 
@@ -434,22 +450,29 @@ def build_graphiti_client(
     *,
     db_path: str | None = None,
     env: Any = None,  # noqa: ANN401
-    group_id: str = "genesys",
+    group_id: str | None = None,
 ) -> GraphitiCoreClient:
     """Construct a GraphitiCoreClient with an embedded FalkorDB instance.
 
     Uses the redislite Unix-socket bridge (identical to probe_extract.py).
     Builds graphiti indices/constraints on first use. API calls happen only
     during `add_episode`; construction itself is free.
+
+    Per-workspace isolation is env-pinned and fail-loud (D-GCW-2): an unset
+    ``db_path``/``group_id`` resolves from ``GENESYS_DB_PATH``/``GENESYS_GROUP_ID``
+    and raises rather than opening an ephemeral /tmp graph (the former mkdtemp
+    fallback was a silent data-loss trap).
     """
-    import os
-    import tempfile
     from redislite import Redis
     from falkordb.asyncio import FalkorDB as AsyncFalkorDB
 
-    # Resolve db path
+    from genesys.config import get_db_path, get_group_id
+
+    # Resolve the persistent per-workspace store — NEVER an ephemeral /tmp graph.
     if db_path is None:
-        db_path = os.path.join(tempfile.mkdtemp(prefix="genesys_"), "genesys.db")
+        db_path = str(get_db_path())
+    if group_id is None:
+        group_id = get_group_id()
 
     api_key = _fetch_api_key(env)
 

@@ -13,7 +13,7 @@ from genesys.doctor import doctor_deadman
 from genesys.journal.journal import JournalEntry, read_journal
 
 _SECURITY = {"scrub", "redact", "redact-cascade"}
-_INFRA = {"worker-error", "lock-violation", "backlog-breach"}
+_INFRA = {"worker-error", "lock-violation", "stale-lock-cleared", "backlog-breach"}
 
 
 @dataclass

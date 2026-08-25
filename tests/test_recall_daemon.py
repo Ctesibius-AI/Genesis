@@ -21,7 +21,7 @@ def _daemon(*, search=None, engine=None):
 
 
 def test_serve_search_returns_results_when_backend_healthy():
-    hit = GraphEdge(edge_id="a", fact="fact a", episodes=["EP-1"], verdict=Verdict.CONFIRMED)
+    hit = GraphEdge(edge_id="a", fact="fact a", episodes=["EP-1"], verdict=Verdict.CONFIRMED, type="ABOUT")
     g = FakeGraph(); g.seed(hit)
     search = FakeRecallSearch(); search.set_semantic("q", [hit]); search.set_keyword("q", [hit])
     d = RecallDaemon(RecallService(g, PerceptionDepartment(),

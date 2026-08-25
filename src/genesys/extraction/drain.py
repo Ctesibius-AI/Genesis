@@ -12,7 +12,7 @@ from pathlib import Path
 
 from genesys.extraction.analyst import prepare_episode
 from genesys.extraction.grapher import render_manifest, run_grapher
-from genesys.extraction.lock import single_instance
+from genesys.extraction.lock import clear_if_dead, single_instance
 from genesys.graph.engine import GraphEngine
 from genesys.ledger.entry import Extracted
 from genesys.ledger.store import read_all, update
@@ -30,10 +30,17 @@ def drain_once(data_root: Path, engine: GraphEngine, backend: LLMBackend, *,
                scorer: RelatednessScorer | None = None,
                supersessions: dict[str, SupersessionDecision] | None = None,
                project: bool = False,
+               time_budget_s: float | None = None, clock=None,
                ladder=None, rng=None, chart=None, ride_along_for=None) -> list[str]:
     """Drain up to `window` queued entries, optionally applying semantic links, recording
     Supervisor-decided supersession, and projecting the final link state to typed edges.
 
+    - `time_budget_s`: BT-2 / D-GCW-5 (AC-D1) bounded drain — stop taking NEW entries once
+      `clock()` shows the elapsed budget is spent; the remainder stays `Extracted.NO` and is
+      deferred to the next start. `None` = count-bound only (`window`). An in-flight entry is
+      never cut mid-way; the bound gates the *start* of each entry (never a block-forever drain).
+    - `clock`: injected monotonic clock (callable -> float seconds); default `time.monotonic`.
+      A stale dead-owner `.drain.lock` is cleared before acquiring the lock (AC-X1).
     - `scorer`: populate same_topic/references/continues after supervise_commit (DR-20).
     - `supersessions`: entry_id -> SupersessionDecision from the Supervisor judgment path;
       records supersedes/caused_by on the ledger and writes graph superseded_by (§8.2, §4.9).
@@ -51,9 +58,17 @@ def drain_once(data_root: Path, engine: GraphEngine, backend: LLMBackend, *,
     Structural links (prev/next) are set at save time; DR-09 lookback+backfill holds throughout.
     """
     processed: list[str] = []
+    if clock is None:
+        import time
+        clock = time.monotonic
+    clear_if_dead(data_root, ts=ts)  # AC-X1: a crashed drain never permanently wedges ingestion
+    start = clock()
     with single_instance(data_root, ts=ts):
         queued = [e for e in read_all(data_root) if e.extracted is Extracted.NO][:window]
         for entry in queued:
+            # AC-D1 bounded drain: stop STARTING new entries past the time budget; defer the rest.
+            if time_budget_s is not None and (clock() - start) >= time_budget_s:
+                break
             entry.extracted = Extracted.IN_PROGRESS
             update(data_root, entry)
             episode = prepare_episode(data_root, entry)

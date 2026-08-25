@@ -9,13 +9,17 @@ live). `search` is the DR-33 three-channel honest-empty terminal (Task 3); `expa
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 
 from genesys.graph.engine import GraphEdge, GraphEngine
 from genesys.linking.relatedness import RelatednessScorer
 from genesys.persona.department import PerceptionDepartment
 from genesys.persona.release import ReleaseContext
+from genesys.recall.allowlist import filter_allowed
 from genesys.recall.fence import fence_edges
+
+_log = logging.getLogger("genesys.recall")
 from genesys.recall.scorer import (
     Channel,
     ChannelResult,
@@ -52,6 +56,12 @@ class RecallService:
         self._dept = dept
         self._scorer = scorer
         self._search = search
+        self._drop_count = 0  # AC-DROP1: cumulative non-allow-listed exclusions (observable)
+
+    @property
+    def drop_count(self) -> int:
+        """AC-DROP1: how many edges recall has excluded as non-allow-listed (drop-visibility)."""
+        return self._drop_count
 
     def _rank(self, anchor: str, edges: list[GraphEdge]) -> list[RankedEdge]:
         ranked = [RankedEdge(e, self._scorer.related(anchor, e.fact), serving_label(e))
@@ -61,7 +71,20 @@ class RecallService:
 
     def _fence_and_gate(self, edges: list[GraphEdge], ctx: ReleaseContext | None
                         ) -> tuple[list[GraphEdge], list[str]]:
-        kept, served = fence_edges(servable_edges(edges), ctx)  # drop quarantined, then fence
+        # BT-6b / #3 (invalidation-subtraction, closed): never serve an edge that has been
+        # invalidated/expired (superseded) — it is not current. Post-commit the graph invalidates it
+        # (F-11 via invalidated_in_window); recall must not resurrect it as a current fact.
+        current = [e for e in servable_edges(edges)
+                   if e.invalid_at is None and e.expired_at is None]
+        # BT-3 / D-GCW-7 (AC-R1, red-line): the CLOSED allow-list is the leak-guard. Drop quarantined
+        # + invalidated, then EXCLUDE any edge whose type is not one of the 8 named memory relations
+        # (fail-closed) — counting the exclusions (AC-DROP1). The persona fence still runs (removed in
+        # BT-4); until then it is a redundant inner gate, never the sole guard.
+        allowed, dropped = filter_allowed(current)
+        if dropped:
+            self._drop_count += dropped
+            _log.info("recall excluded %d non-allow-listed edge(s) (drop-visibility, AC-DROP1)", dropped)
+        kept, served = fence_edges(allowed, ctx)
         return kept, served
 
     def expand(self, anchor_episode: str, tier: Tier, *,

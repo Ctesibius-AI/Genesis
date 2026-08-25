@@ -31,6 +31,7 @@ def to_graph_edge(ce: ClientEdge) -> GraphEdge:
         evidence_against=list(a.get("evidence_against", [])),
         superseded_by=a.get("superseded_by"),
         class_=a.get("class"),
+        type=ce.type,  # BT-6: carry the graphiti relation type through for the allow-list
     )
 
 

@@ -23,6 +23,7 @@ class ClientEdge:
     invalid_at: str | None = None
     expired_at: str | None = None
     attributes: dict[str, object] = field(default_factory=dict)
+    type: str | None = None  # BT-6: graphiti relation type (EntityEdge.name), for the allow-list
 
 
 @dataclass

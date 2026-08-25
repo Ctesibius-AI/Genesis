@@ -34,6 +34,10 @@ class GraphEdge:
     evidence_against: list[str] = field(default_factory=list)
     superseded_by: str | None = None
     class_: str | None = None
+    # BT-6 / D-GCW-14: the graphiti relation type (edge name, e.g. "WORKS_ON"). None = untyped /
+    # unclassifiable — excluded by the fail-closed recall allow-list (D-GCW-7). Filled from
+    # graphiti's EntityEdge.name via the typed add_episode feed on the live path.
+    type: str | None = None
 
 
 @dataclass

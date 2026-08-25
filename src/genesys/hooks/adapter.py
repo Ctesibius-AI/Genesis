@@ -81,6 +81,7 @@ def dispatch(
     cursor_delta: bool = False,
     wal: bool = False,
     annotate: bool = True,
+    drain: Any = None,
 ) -> dict:
     """Dispatch a Claude Code hook event to the appropriate Genesys pipeline action.
 
@@ -134,6 +135,17 @@ def dispatch(
     # SessionStart — return diary briefing as additionalContext            #
     # ------------------------------------------------------------------ #
     if event == "SessionStart":
+        # BT-2 / D-GCW-5: run the bounded drain BEFORE compiling the diary, so a fresh session
+        # starts from an up-to-date graph. `drain` is a zero-arg callable injected by cli.py
+        # (it binds the engine/backend + the count/time bound). AC-D2: a drain already in
+        # progress raises LockHeld — treat it as a NO-OP and compile from current state; never
+        # block or error start.
+        if drain is not None:
+            from genesys.extraction.lock import LockHeld
+            try:
+                drain()
+            except LockHeld:
+                pass
         context = session_start_context(
             data_root,
             now_iso=now,
