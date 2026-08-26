@@ -53,9 +53,10 @@ def compute_store(workspace: Path, data_root: Path, mode: str) -> tuple[str, str
 
 
 def genesis_env(data_root: Path, db_path: str, group_id: str) -> dict:
-    # GENESIS_DATA (config) and GENESIS_DATA_ROOT (hooks/cli) are two names for the same root
-    # today — set BOTH (duplication flagged for follow-up cleanup, not reconciled here).
-    return {"GENESIS_DATA": str(data_root), "GENESIS_DATA_ROOT": str(data_root),
+    # GENESIS_DATA is the SOLE canonical data-root env var (D-FB-2). The old GENESIS_DATA_ROOT is no
+    # longer written; it stays in _ENV_KEYS so uninstall/rewire still cleans up a stale one left by a
+    # pre-D-FB-2 install (one-release deprecation window). Readers accept it with a warning for now.
+    return {"GENESIS_DATA": str(data_root),
             "GENESIS_DB_PATH": db_path, "GENESIS_GROUP_ID": group_id}
 
 

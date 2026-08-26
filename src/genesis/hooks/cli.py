@@ -5,10 +5,11 @@ modules (adapter.py, translate.py) are clock-injected so they remain testable
 without monkeypatching datetime.
 
 Usage (from Claude Code hook configuration):
-    echo '<hook_json>' | GENESIS_DATA_ROOT=/path/to/data genesis-hook
+    echo '<hook_json>' | GENESIS_DATA=/path/to/data genesis-hook
 
 Environment variables:
-    GENESIS_DATA_ROOT   Path to the Genesis data root (default: ".").
+    GENESIS_DATA        Path to the Genesis data root (default: "."). The old GENESIS_DATA_ROOT is
+                        accepted for one release with a deprecation warning (D-FB-2), then removed.
     GENESIS_NOW         ISO-8601 timestamp override. If set, used as the clock.
                         If not set and the hook JSON carries a "now" key, that is used.
                         If neither is available, the wall-clock is read HERE only.
@@ -87,8 +88,8 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps({"error": f"invalid JSON on stdin: {exc}"}), file=sys.stdout)
         return 1
 
-    from genesis.config import _getenv  # noqa: PLC0415 — GENESYS_* deprecation fallback (D-GCW-20)
-    data_root = Path(_getenv("GENESIS_DATA_ROOT") or ".")
+    from genesis.config import _data_root_env_value  # noqa: PLC0415 — canonical GENESIS_DATA (+ deprecated GENESIS_DATA_ROOT, D-FB-2)
+    data_root = Path(_data_root_env_value() or ".")  # hook keeps its documented "." default (D-FB-1 removed "." for the MCP entry only)
     now = _resolve_now(hook)
 
     try:

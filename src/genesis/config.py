@@ -63,15 +63,38 @@ def get_local_hmac_key() -> bytes:
 from pathlib import Path  # noqa: E402  (kept next to its use for clarity)
 
 DATA_ROOT_ENV = "GENESIS_DATA"
+# Retired name (D-FB-2): accepted for ONE release as a deprecated fallback, then removed. GENESIS_DATA
+# is the sole canonical data-root env var; GENESIS_DATA_ROOT was a second name for the same root.
+DATA_ROOT_LEGACY_ENV = "GENESIS_DATA_ROOT"
+
+
+def _data_root_env_value() -> str | None:
+    """Resolve the data-root env value — canonical ``GENESIS_DATA``, else the DEPRECATED
+    ``GENESIS_DATA_ROOT`` for one release (D-FB-2, D-GCW-20 pattern).
+
+    Single resolution point for every data-root reader. Returns None if neither is set; the CALLER
+    decides whether that is fail-loud (``get_data_root``) or a default (the hooks CLI keeps ``"."``).
+    The canonical name always wins; the old name only fills a gap and warns once resolved through it.
+    """
+    val = _getenv(DATA_ROOT_ENV)  # GENESIS_DATA (+ its GENESYS_DATA D-GCW-20 legacy)
+    if val is not None:
+        return val
+    legacy = os.environ.get(DATA_ROOT_LEGACY_ENV)
+    if legacy is not None:
+        warnings.warn(
+            f"{DATA_ROOT_LEGACY_ENV} is deprecated (renamed to {DATA_ROOT_ENV}); accepted this "
+            "release only (D-FB-2).", DeprecationWarning, stacklevel=2)
+    return legacy
 
 
 def get_data_root() -> Path:
     """Return the Genesis data root (owned files + ledger) from ``GENESIS_DATA``.
 
-    No silent default: a memory of record must not scatter its files to an
-    unexpected place because an env var was forgotten (12-Factor; loud failure).
+    Accepts the deprecated ``GENESIS_DATA_ROOT`` for one release (D-FB-2). No silent default: a memory
+    of record must not scatter its files to an unexpected place because an env var was forgotten
+    (12-Factor; loud failure).
     """
-    raw = _getenv(DATA_ROOT_ENV)
+    raw = _data_root_env_value()
     if not raw:
         raise ConfigError(
             f"{DATA_ROOT_ENV} is not set. Genesis needs an explicit data root "
@@ -159,7 +182,7 @@ def _config_file_path() -> Path:
     override = _getenv(CONFIG_FILE_ENV)
     if override:
         return Path(override)
-    root = _getenv(DATA_ROOT_ENV)
+    root = _data_root_env_value()  # canonical GENESIS_DATA, deprecated GENESIS_DATA_ROOT fallback (D-FB-2)
     if root:
         return Path(root) / "config.json"
     return Path.home() / ".genesis" / "config.json"

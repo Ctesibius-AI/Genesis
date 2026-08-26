@@ -65,7 +65,7 @@ def _run_main(
     """Run main() with monkeypatched stdin + env, capture stdout."""
     hook_json = json.dumps(hook)
     monkeypatch.setattr("sys.stdin", io.StringIO(hook_json))
-    monkeypatch.setenv("GENESIS_DATA_ROOT", str(tmp_path))
+    monkeypatch.setenv("GENESIS_DATA", str(tmp_path))
     monkeypatch.setenv("GENESIS_NOW", now)
 
     exit_code = main()
@@ -147,7 +147,7 @@ def test_cli_invalid_json_on_stdin_exits_one(
     capsys: pytest.CaptureFixture,
 ):
     monkeypatch.setattr("sys.stdin", io.StringIO("not { valid json"))
-    monkeypatch.setenv("GENESIS_DATA_ROOT", str(tmp_path))
+    monkeypatch.setenv("GENESIS_DATA", str(tmp_path))
     monkeypatch.setenv("GENESIS_NOW", NOW)
 
     exit_code = main()
@@ -173,7 +173,7 @@ def test_cli_now_from_env_is_used(
         "session_id": "sess-clock-env",
     }
     monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(hook)))
-    monkeypatch.setenv("GENESIS_DATA_ROOT", str(tmp_path))
+    monkeypatch.setenv("GENESIS_DATA", str(tmp_path))
     monkeypatch.setenv("GENESIS_NOW", custom_now)
 
     exit_code = main()
@@ -207,7 +207,7 @@ def test_cli_now_from_hook_json_is_used_when_env_absent(
         "now": "2026-06-15T08:00:00+00:00",
     }
     monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(hook)))
-    monkeypatch.setenv("GENESIS_DATA_ROOT", str(tmp_path))
+    monkeypatch.setenv("GENESIS_DATA", str(tmp_path))
     monkeypatch.delenv("GENESIS_NOW", raising=False)
 
     exit_code = main()
@@ -240,9 +240,11 @@ def test_cli_default_data_root_is_dot(
     capsys: pytest.CaptureFixture,
     tmp_path_factory: pytest.TempPathFactory,
 ):
-    """When GENESIS_DATA_ROOT is not set, defaults to '.' (cwd)."""
+    """When no data-root env var is set, the hook keeps its documented '.' default (D-FB-1 removed
+    the '.' fallback for the MCP entry point ONLY; the hook default stands)."""
     hook = {"hook_event_name": "SessionStart"}
     monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(hook)))
+    monkeypatch.delenv("GENESIS_DATA", raising=False)
     monkeypatch.delenv("GENESIS_DATA_ROOT", raising=False)
     monkeypatch.setenv("GENESIS_NOW", NOW)
     # chdir to a tmp dir so "." resolves safely

@@ -10,7 +10,8 @@ from pathlib import Path
 import pytest
 
 from genesis.hooks.wiring import GENESIS_EVENTS, hook_wiring_status, is_genesis_hook
-from genesis.install.installer import InstallError, compute_store, install, uninstall
+from genesis.install.installer import (
+    InstallError, compute_store, genesis_env, install, uninstall)
 
 
 def _settings(ws: Path) -> dict:
@@ -79,6 +80,28 @@ def test_two_workspaces_resolve_to_two_stores(tmp_path):
     r2 = _install(tmp_path / "wsB", data)
     assert r1["db_path"] != r2["db_path"]
     assert r1["group_id"] != r2["group_id"]
+
+
+def test_env_block_writes_canonical_data_root_only(tmp_path):
+    """D-FB-2: the installer writes GENESIS_DATA (sole canonical) and never the retired
+    GENESIS_DATA_ROOT — the two-names duplication is gone."""
+    env = genesis_env(tmp_path / "data", "s/graph.db", "grp")
+    assert env["GENESIS_DATA"] == str(tmp_path / "data")
+    assert "GENESIS_DATA_ROOT" not in env
+    assert env["GENESIS_DB_PATH"] == "s/graph.db" and env["GENESIS_GROUP_ID"] == "grp"
+
+
+def test_uninstall_cleans_a_stale_legacy_data_root_key(tmp_path):
+    """During the one-release window, uninstall/rewire still REMOVES a GENESIS_DATA_ROOT left by a
+    pre-D-FB-2 install (it stays in _ENV_KEYS for cleanup even though it is no longer written)."""
+    ws = tmp_path / "ws"
+    settings = ws / ".claude" / "settings.json"
+    settings.parent.mkdir(parents=True)
+    settings.write_text(json.dumps(
+        {"env": {"GENESIS_DATA_ROOT": "/old", "FOREIGN": "keep"}}), encoding="utf-8")
+    uninstall(ws)
+    s = _settings(ws)
+    assert s.get("env") == {"FOREIGN": "keep"}  # stale legacy key gone; foreign survives
 
 
 def test_store_modes(tmp_path):

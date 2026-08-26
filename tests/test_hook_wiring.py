@@ -13,7 +13,7 @@ from genesis.hooks.wiring import (
     write_hook_wiring,
 )
 
-CMD = ("GENESIS_DATA_ROOT=/x PYTHONPATH=/y /z/python -m genesis.hooks.cli")
+CMD = ("GENESIS_DATA=/x PYTHONPATH=/y /z/python -m genesis.hooks.cli")
 FOREIGN_STOP = {
     "hooks": [{"type": "command", "command": "/usr/bin/python3 .../response_validator.py",
                "timeout": 10}]

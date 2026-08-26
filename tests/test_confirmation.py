@@ -90,7 +90,7 @@ def test_cli_output_is_pure_json_carrying_systemMessage(tmp_path, monkeypatch, c
     import json as _json
 
     from genesis.hooks import cli
-    monkeypatch.setenv("GENESIS_DATA_ROOT", str(tmp_path))
+    monkeypatch.setenv("GENESIS_DATA", str(tmp_path))
     monkeypatch.setenv("GENESIS_NOW", NOW)
     monkeypatch.setattr("sys.stdin", io.StringIO(_json.dumps({"hook_event_name": "SessionStart"})))
     assert cli.main([]) == 0

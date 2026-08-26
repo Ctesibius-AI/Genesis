@@ -71,19 +71,14 @@ def build_recall_mcp_server(daemon, *, name: str = "genesis-recall"):  # pragma:
 
 def main() -> None:  # pragma: no cover - live entrypoint (stdio transport, warm daemon)
     """`python -m genesis.recall.mcp_server` — the stdio recall MCP server (D-GCW-1 default)."""
-    import os
-
+    from genesis.config import get_data_root
     from genesis.recall.daemon import build_recall_daemon
 
-    # ONE PATH LAW (graph-harness T1): the STORE is resolved by build_graphiti_client from
-    # GENESIS_DB_PATH (D-GCW-2 fail-loud) — NOT passed here. Previously this read a `.`-defaulted
-    # GENESIS_DATA_ROOT and derived the store from it, so with GENESIS_DB_PATH unset the daemon could
-    # silently open ./graph.db (the F-17.3 danger) and point recall at the wrong/empty store. data_root
-    # is passed for signature stability only; it no longer governs the store.
-    # NOTE (routed, not reconciled here): GENESIS_DATA_ROOT vs GENESIS_DATA is an unresolved
-    # data-root naming duplication (installer.py:59 sets both) — owner decision pending; unrelated to
-    # the store path, which is now GENESIS_DB_PATH end-to-end.
-    daemon = build_recall_daemon(os.environ.get("GENESIS_DATA_ROOT", "."))  # db_path=None → GENESIS_DB_PATH
+    # Data root resolves via canonical config — GENESIS_DATA, FAIL-LOUD (D-FB-1); the old silent "."
+    # fallback is gone, so the daemon never quietly runs against the cwd. The STORE itself is
+    # GENESIS_DB_PATH (graph-harness T1); build_recall_daemon passes db_path=None so
+    # build_graphiti_client fail-loud-resolves it (D-GCW-2).
+    daemon = build_recall_daemon(get_data_root())
     build_recall_mcp_server(daemon).run()  # stdio by default; http is the D-GCW-1 opt-in
 
 

@@ -35,6 +35,33 @@ def test_both_names_unset_still_fails_loud(monkeypatch):
         get_db_path()
 
 
+# --- D-FB-2: GENESIS_DATA is the sole canonical data-root var; GENESIS_DATA_ROOT retired (1 release) ---
+
+def test_legacy_data_root_name_accepted_with_deprecation(monkeypatch):
+    """The retired GENESIS_DATA_ROOT is accepted for one release, with a DeprecationWarning."""
+    monkeypatch.delenv("GENESIS_DATA", raising=False)
+    monkeypatch.delenv("GENESYS_DATA", raising=False)
+    monkeypatch.setenv("GENESIS_DATA_ROOT", "/old/root")
+    with pytest.warns(DeprecationWarning):
+        assert get_data_root() == Path("/old/root")
+
+
+def test_canonical_data_root_wins_over_legacy_without_warning(monkeypatch, recwarn):
+    """GENESIS_DATA (canonical) always wins over the deprecated GENESIS_DATA_ROOT — no warning."""
+    monkeypatch.setenv("GENESIS_DATA", "/canonical/root")
+    monkeypatch.setenv("GENESIS_DATA_ROOT", "/old/root")
+    assert get_data_root() == Path("/canonical/root")
+    assert not any(isinstance(w.message, DeprecationWarning) for w in recwarn.list)
+
+
+def test_data_root_all_names_unset_fails_loud(monkeypatch):
+    monkeypatch.delenv("GENESIS_DATA", raising=False)
+    monkeypatch.delenv("GENESYS_DATA", raising=False)
+    monkeypatch.delenv("GENESIS_DATA_ROOT", raising=False)
+    with pytest.raises(ConfigError):  # neither canonical nor deprecated set → loud, never a guess
+        get_data_root()
+
+
 def test_db_path_unset_fails_loud(monkeypatch):
     monkeypatch.delenv("GENESIS_DB_PATH", raising=False)
     with pytest.raises(ConfigError):

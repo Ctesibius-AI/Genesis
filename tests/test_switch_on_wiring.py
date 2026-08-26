@@ -25,7 +25,7 @@ def test_live_hook_passes_wal_and_cursor_delta(monkeypatch, tmp_path):
         return {"ok": True}
 
     monkeypatch.setattr(hooks_cli, "dispatch", fake_dispatch)
-    monkeypatch.setenv("GENESIS_DATA_ROOT", str(tmp_path))
+    monkeypatch.setenv("GENESIS_DATA", str(tmp_path))
     payload = {"hook_event_name": "SessionEnd", "now": "2026-08-19T10:00:00+00:00"}
     monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(payload)))
 
