@@ -62,12 +62,29 @@ Genesis is built to run **on your machine, for you**:
 - **Telemetry-off.** There is no phone-home, no analytics, no usage beacon. The
   offline test suite runs with the network physically disabled.
 - **Secrets scrubbed at the door.** A deterministic redaction pass removes API keys,
-  tokens, and other secrets during capture, before anything is persisted. Redaction
-  tombstones are keyed (HMAC) so they prove *what was there* without becoming a
-  lookup oracle.
+  tokens, and other secrets during capture, before anything is persisted. Placeholder
+  fingerprints are **keyed** (HMAC) when a local key is set and **omitted** when not —
+  never an unkeyed hash that could confirm a guess. Redaction tombstones are likewise
+  keyed.
+- **Usernames masked at capture.** Home-directory paths (`/Users/<name>`, `/home/<name>`)
+  are rewritten to `~` at the capture door, so your username never reaches the store or
+  the model. (Covers paths, not bare-name mentions; POSIX-only.)
+- **The model never sees the flight recorder.** Only the clean memory-grade projection
+  reaches the model; the fuller flight-recorder projection stays local.
 - **Provider-agnostic.** LLM and graph backends are injected behind interfaces. The
   whole engine is exercisable offline with fake backends; live providers
   (Anthropic, a graph store) are optional extras you opt into.
+
+### What recall serves, and how it's labelled
+
+Recall is **quarantine-gated, invalidation-gated, and allow-list-scoped** — not
+confirmation-gated. So: **quarantined** facts are never served; **not-yet-gated** facts
+are served **labelled `[unverified]`** (meaning exactly "not yet gated"); **gated-and-passed**
+facts are served clean; **contested** facts carry `[contested]`. You always see how
+well-supported an answer is (a graded 100/70/30 corroboration score travels with it).
+
+> **Reference docs:** [Mechanism reference](docs/MECHANISM.md) (ontology, enums, scoring —
+> regenerated from source) · [Posture & guarantees](docs/POSTURE.md).
 
 ---
 
