@@ -7,6 +7,7 @@ Single-writer + no locks means a drain that wedges mid-flight leaves entries stu
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -14,6 +15,8 @@ from pathlib import Path
 from genesis.hooks.wiring import hook_wiring_status
 from genesis.ledger.entry import Extracted
 from genesis.ledger.store import read_all, update
+
+_log = logging.getLogger("genesis.doctor")
 
 
 def doctor_requeue(data_root: Path) -> list[str]:
@@ -24,6 +27,35 @@ def doctor_requeue(data_root: Path) -> list[str]:
             update(data_root, entry)
             requeued.append(entry.entry_id)
     return requeued
+
+
+def doctor_reconcile_done(data_root: Path, engine) -> list[str]:
+    """Revert DONE ledger entries whose episode has NO edges in the graph back to queued.
+
+    The "ledger says done, store empty" shape the graph-harness bug produced (and F-26.2 found the
+    wiki had *fabricated* a consistency check that never existed): if an entry is DONE but the graph
+    holds no edges for its episode, the graph did not durably record the extraction — re-queue it
+    (Extracted.NO) so the next drain re-extracts, and report loudly.
+
+    ⚠ MANUAL / DIAGNOSTIC ONLY — deliberately NOT wired into the per-pass hot path. A genuinely empty
+    extraction (no facts found) is ALSO DONE-with-no-edges, so running this automatically would
+    re-queue it forever. It is an owner-invoked reconciliation (fsck-style) for suspected store loss;
+    the loud report lets the owner see what it touched. Requires a graph engine (a read).
+    """
+    reverted: list[str] = []
+    for entry in read_all(data_root):
+        if entry.extracted is not Extracted.DONE:
+            continue
+        if engine.created_in_episode(entry.entry_id):
+            continue  # edges present → consistent
+        entry.extracted = Extracted.NO
+        update(data_root, entry)
+        reverted.append(entry.entry_id)
+    if reverted:
+        _log.warning(
+            "doctor: %d DONE entr(y/ies) had NO graph edges (store loss or empty extraction) — "
+            "reverted to queued for re-extraction: %s", len(reverted), reverted)
+    return reverted
 
 
 @dataclass

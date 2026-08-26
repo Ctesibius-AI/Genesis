@@ -7,10 +7,27 @@ mutable fields only, DR-20). ``read_all`` returns current state in ``ts`` order.
 
 from __future__ import annotations
 
+import os
 from datetime import datetime
 from pathlib import Path
 
 from genesis.ledger.entry import LedgerEntry, from_jsonl, to_jsonl
+
+
+def _atomic_write(path: Path, content: str) -> None:
+    """Write ``content`` to ``path`` atomically (F-05.3): a same-dir tmp + ``os.replace``.
+
+    A plain full-file rewrite that is interrupted mid-write (crash/kill/power loss) can leave a
+    truncated month file — destroying an entire month of ledger history. os.replace is atomic on
+    POSIX: readers see either the old file or the fully-written new one, never a partial. fsync the
+    tmp before the swap so the bytes are durable, not just visible.
+    """
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    with open(tmp, "w", encoding="utf-8") as fh:
+        fh.write(content)
+        fh.flush()
+        os.fsync(fh.fileno())
+    os.replace(tmp, path)
 
 
 def ledger_dir(data_root: Path) -> Path:
@@ -63,4 +80,4 @@ def update(data_root: Path, entry: LedgerEntry) -> None:
             out.append(line)
     if not replaced:
         raise KeyError(f"entry not found for update: {entry.entry_id}")
-    path.write_text("\n".join(out) + "\n", encoding="utf-8")
+    _atomic_write(path, "\n".join(out) + "\n")  # F-05.3: crash-safe, never a truncated month

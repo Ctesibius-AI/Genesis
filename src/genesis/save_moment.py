@@ -1,13 +1,13 @@
-"""Manual save ritual (CS4) — capture the current session window as a SALIENT annotation.
+"""Manual save ritual (CS4) — capture the current session window as a save annotation.
 
 `find_current_transcript`: locates the newest .jsonl under ~/.claude/projects/<encoded>/ for a
 given project_cwd. `save_moment`: flushes any un-captured transcript tail (Part A incremental
-path), then annotates the already-captured WAL window as SALIENT via ``save_annotation`` —
+path), then annotates the already-captured WAL window as a save-point via ``save_annotation`` —
 WITHOUT re-appending the whole transcript (Part B: save references, does not re-capture).
 
 Owner's model:
   - Automatic hooks capture each reply ONCE (incremental WAL append, no annotations).
-  - A manual save REFERENCES the already-captured window by creating a SALIENT annotation
+  - A manual save REFERENCES the already-captured window by creating a save annotation
     (last_save_cursor → now) over the WAL, after optionally flushing any uncaptured tail.
 
 No new dependencies; stdlib + internal genesis modules only.
@@ -110,13 +110,13 @@ def save_moment(
     note: str,
     speakers: tuple[str, ...] | list[str] | None = None,
 ) -> LedgerEntry | None:
-    """Capture the current session window as a SALIENT annotation with `note` as its jot.
+    """Capture the current session window as a save annotation with `note` as its jot.
 
     Part B fix — save REFERENCES, does not re-capture:
       1. Flush only the *tail* (any new records since the last WAL append for this session,
          via the Part-A incremental write-cursor path) so the current in-progress reply is
          captured ONCE.
-      2. Create the SALIENT annotation over the already-captured WAL window using
+      2. Create the save annotation over the already-captured WAL window using
          ``save_annotation`` directly — NOT ``append_and_annotate`` — so the window content
          is NOT re-appended again.
 
@@ -130,7 +130,7 @@ def save_moment(
             [principal, assistant] — see genesis.config).
 
     Returns:
-        The created LedgerEntry (a SALIENT annotation), or None if there is nothing in the
+        The created LedgerEntry (a save annotation), or None if there is nothing in the
         WAL window (empty transcript, no memory-grade material captured at all).
     """
     if speakers is None:
@@ -167,7 +167,7 @@ def save_moment(
     if not all_records:
         return None
 
-    # Step 3: annotate the window (last_save_cursor → now) as SALIENT — reference only,
+    # Step 3: annotate the window (last_save_cursor → now) as a save-point — reference only,
     # no re-capture. The window is fully constituted by the WAL appends above + prior rings.
     window_cursor = latest_span_end_for_session(data_root, session_id)
     # After the tail flush, the write cursor advanced to len(all_records) but the ledger

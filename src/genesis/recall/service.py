@@ -44,6 +44,7 @@ class RecallResult:
     edges: list[RankedEdge] = field(default_factory=list)
     verdict: RecallVerdict | None = None
     served_anchors: list[str] = field(default_factory=list)
+    drop_count: int = 0  # AC-DROP1: cumulative non-allow-listed exclusions, surfaced to the payload
 
     def is_empty(self) -> bool:
         return not self.edges
@@ -83,12 +84,25 @@ class RecallService:
             _log.info("recall excluded %d non-allow-listed edge(s) (drop-visibility, AC-DROP1)", dropped)
         return allowed
 
+    def _absent_verdict(self) -> RecallVerdict:
+        """An honest-empty verdict (nothing found; cause ABSENT) — the same three-channel-miss shape
+        search emits, so an empty expand is self-describing too (parity), not a bare verdict=None."""
+        return score_channels(
+            [ChannelResult(Channel.SEMANTIC, False), ChannelResult(Channel.KEYWORD, False),
+             ChannelResult(Channel.GRAPH, False)], cause=EmptyCause.ABSENT)
+
     def expand(self, anchor_episode: str, tier: Tier) -> RecallResult:
         if not reads_graph(tier):
-            return RecallResult()
+            # This tier does no graph read (not "looked and found nothing") → bare empty, verdict None.
+            return RecallResult(drop_count=self._drop_count)
         one_hop = self._engine.created_in_episode(anchor_episode)
         kept = self._gate(one_hop)
-        return RecallResult(edges=self._rank(anchor_episode, kept), verdict=None)
+        if not kept:
+            # Looked, found nothing → honest-empty (ABSENT), parity with search — self-describing,
+            # not a bare verdict=None the MCP payload can't explain.
+            return RecallResult(verdict=self._absent_verdict(), drop_count=self._drop_count)
+        return RecallResult(edges=self._rank(anchor_episode, kept), verdict=None,
+                            drop_count=self._drop_count)
 
     def _graph_channel_confirms(self, edge: GraphEdge) -> bool:
         try:
@@ -112,4 +126,4 @@ class RecallService:
         ]
         verdict = score_channels(results, cause=cause)
         ranked = self._rank(query, list(union.values()))[:top_n]
-        return RecallResult(edges=ranked, verdict=verdict)
+        return RecallResult(edges=ranked, verdict=verdict, drop_count=self._drop_count)

@@ -35,6 +35,7 @@ def recall_response(result: RecallResult) -> dict:
         "verdict": verdict,
         "edges": [{"fact": re.edge.fact, "score": re.score, "label": re.label}
                   for re in result.edges],
+        "drop_count": result.drop_count,  # AC-DROP1: non-allow-listed exclusions, auditable in-payload
         "message": format_for_injection(result),  # the honest-empty / labelled-context string
     }
 

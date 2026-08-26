@@ -33,9 +33,12 @@ def apply_remedy(engine: GraphEngine, data_root: Path, edge: GraphEdge, remedy: 
         return "quarantined"
     if remedy.action == "amend":
         # plain/C1/C2: apply the corrected text to the fact (Supervisor-executed) + journal.
+        # F-07.2: keep the BEFORE-text so every LLM correction is auditable (proposed → prior → applied).
+        before_text = edge.fact
         engine.write_fact(edge.edge_id, remedy.content or edge.fact)
         append_journal(data_root, JournalEntry(ts=ts, action="gate-resolve", scope=edge.episodes[-1],
-                       target=edge.edge_id, class_=edge.class_, after="amended", author="supervisor"))
+                       target=edge.edge_id, class_=edge.class_, before=before_text, after="amended",
+                       author="supervisor"))
         return "amended"
     return "none"
 

@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from genesis.capture.mirror import CaptureResult, flight_span_from_result, raw_span_from_result
+from genesis.capture.mirror import CaptureResult, flight_span_from_result, memory_grade_text_from_result
 from genesis.ledger.entry import LedgerEntry
 from genesis.wal.annotate import save_annotation
 from genesis.wal.record import WalRecord
@@ -33,7 +33,7 @@ def append_and_annotate(data_root: Path, *, capture_result: CaptureResult, curso
     In both cases the skip-when-nothing-new guard is applied first: if the memory-grade
     delta is empty, return ``None`` immediately and append nothing.
     """
-    mem_delta = raw_span_from_result(capture_result)
+    mem_delta = memory_grade_text_from_result(capture_result)
     if not mem_delta.strip():
         return None  # nothing new for this session — skip (Plan 1 parity)
     fly_delta = flight_span_from_result(capture_result)

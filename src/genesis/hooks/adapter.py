@@ -17,7 +17,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from genesis.capture.mirror import mirror_events, raw_span_from_result
+from genesis.capture.mirror import mirror_events, memory_grade_text_from_result
 from genesis.config import get_assistant_name, get_principal
 from genesis.diary.backend import FakeBackend
 from genesis.diary.hooks import precompact_flush, session_start_context
@@ -208,7 +208,7 @@ def dispatch(
         events = cc_transcript_to_events(records)
         capture_result = mirror_events(events)
 
-        raw_span = raw_span_from_result(capture_result)
+        raw_span = memory_grade_text_from_result(capture_result)
         summary = provisional_summary(events)
         span_start, span_end = _timestamps_from_events(events)
 
@@ -285,7 +285,7 @@ def dispatch(
         events = cc_transcript_to_events(records)
         capture_result = mirror_events(events)
 
-        raw_span = raw_span_from_result(capture_result)
+        raw_span = memory_grade_text_from_result(capture_result)
         summary = provisional_summary(events)
         span_start, span_end = _timestamps_from_events(events)
 

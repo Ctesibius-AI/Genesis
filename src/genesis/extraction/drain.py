@@ -13,7 +13,7 @@ from pathlib import Path
 from genesis.extraction.analyst import prepare_episode
 from genesis.extraction.grapher import render_manifest, run_grapher
 from genesis.extraction.lock import clear_if_dead, single_instance
-from genesis.graph.engine import GraphEngine
+from genesis.graph.engine import AddResult, GraphEngine
 from genesis.ledger.entry import Extracted
 from genesis.ledger.store import read_all, update
 from genesis.linking.decision import SupersessionDecision
@@ -72,8 +72,21 @@ def drain_once(data_root: Path, engine: GraphEngine, backend: LLMBackend, *,
             entry.extracted = Extracted.IN_PROGRESS
             update(data_root, entry)
             episode = prepare_episode(data_root, entry)
-            result = run_grapher(engine, episode)
-            commit_start, commit_end = engine.window_for(episode.episode_id)
+            # F-26.4 resume-safe: a crash AFTER the graph commit but BEFORE marking DONE leaves the
+            # entry IN_PROGRESS; the doctor re-queues it. If the episode's edges already landed, REUSE
+            # them instead of re-running the grapher — a retry must never re-add an already-committed
+            # episode (duplicate extraction). Then resume at supervise/links/DONE.
+            existing = engine.created_in_episode(episode.episode_id)
+            if existing:
+                result = AddResult(created=existing)
+            else:
+                result = run_grapher(engine, episode)
+            try:
+                commit_start, commit_end = engine.window_for(episode.episode_id)
+            except KeyError:
+                # Resume path: the commit window was stamped in the crashed process, not this one →
+                # a degenerate current-time window (no NEW invalidations to attribute on resume).
+                commit_start = commit_end = ts
             supervise_commit(engine, data_root, episode.episode_id, jot=episode.jot,
                              manifest=render_manifest(result), backend=backend,
                              commit_start=commit_start, commit_end=commit_end, ts=ts,

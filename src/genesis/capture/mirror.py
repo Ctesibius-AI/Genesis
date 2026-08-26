@@ -243,7 +243,7 @@ def mirror_events(events: Iterable[TranscriptEvent | dict]) -> CaptureResult:
 # Projection text helpers (shared by adapter and wal.courier)                  #
 # --------------------------------------------------------------------------- #
 
-def raw_span_from_result(capture_result: CaptureResult) -> str:
+def memory_grade_text_from_result(capture_result: CaptureResult) -> str:
     """Join the memory-grade projection text (clean, scrubbed).
 
     Moved here from hooks.adapter to break the adapter↔courier circular import.

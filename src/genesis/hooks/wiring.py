@@ -1,6 +1,6 @@
 """F3 hook-wiring safety (spec §1 F3 row; §7 item 1).
 
-Hook wiring is a silent SPOF: manual registration in .claude/settings.local.json; if
+Hook wiring is a silent SPOF: manual registration in .claude/settings.json; if
 absent/reset, capture stops with no warning. This module gives (a) a wiring STATUS
 read (which Genesis capture hooks are registered) and (b) a consent-based, idempotent,
 MERGE-NEVER-CLOBBER writer. It does NOT auto-install: activation is an owner-gated

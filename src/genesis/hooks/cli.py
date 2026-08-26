@@ -66,8 +66,11 @@ def _session_start_drain(data_root: Path, now: str):
         from genesis.ledger.entry import Extracted  # noqa: PLC0415
         from genesis.ledger.store import read_all  # noqa: PLC0415
         try:
-            if not any(e.extracted is Extracted.NO for e in read_all(data_root)):
-                return  # nothing queued → skip (no live engine build)
+            # F-08.3: IN_PROGRESS counts as "not idle" too — a crashed entry that is the ONLY thing
+            # in the ledger must not strand (skipping here would skip the doctor that re-queues it).
+            if not any(e.extracted in (Extracted.NO, Extracted.IN_PROGRESS)
+                       for e in read_all(data_root)):
+                return  # nothing queued or in-flight → skip (no live engine build)
             from genesis.extraction.live import run_once  # noqa: PLC0415 — live-only
             run_once(data_root, now=now, window=SESSION_START_DRAIN_WINDOW,
                      time_budget_s=SESSION_START_DRAIN_TIME_BUDGET_S)

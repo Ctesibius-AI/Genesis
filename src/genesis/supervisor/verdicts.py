@@ -33,7 +33,10 @@ def promote_created(engine: GraphEngine, data_root: Path, created: list[GraphEdg
     """
     promoted: list[str] = []
     for edge in created:
-        current = engine.get(edge.edge_id).verdict
+        try:
+            current = engine.get(edge.edge_id).verdict
+        except KeyError:
+            continue  # edge not in the engine (e.g. reverted/absent) — skip, never crash the gate
         if current in (Verdict.QUARANTINED, Verdict.CONFIRMED):
             continue
         set_verdict(engine, data_root, edge, Verdict.CONFIRMED, ts=ts, reason=reason)
@@ -50,8 +53,11 @@ def quarantine_created(engine: GraphEngine, data_root: Path, created: list[Graph
     """
     held: list[str] = []
     for edge in created:
-        if engine.get(edge.edge_id).verdict is Verdict.QUARANTINED:
-            continue
+        try:
+            if engine.get(edge.edge_id).verdict is Verdict.QUARANTINED:
+                continue
+        except KeyError:
+            continue  # edge not in the engine — skip, never crash the gate
         set_verdict(engine, data_root, edge, Verdict.QUARANTINED, ts=ts, reason=reason)
         held.append(edge.edge_id)
     return held

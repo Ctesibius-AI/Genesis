@@ -39,6 +39,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 
 from genesis.config import get_local_hmac_key_optional
+from genesis.ids import EPISODE_ID_RE  # F-02.1: single source of the episode-ID shape (drift-proof)
 
 
 # --------------------------------------------------------------------------- #
@@ -106,11 +107,10 @@ def mask_home_paths(text: str) -> str:
 # matched by their own shapes below.
 _GIT_SHA_RE = re.compile(r"\b[0-9a-f]{7,40}\b")
 
-# Genesis deterministic episode ID: day + sequence (DR-24 "named by the deterministic
-# episode ID (day + sequence)"). Shape: gen-YYYYMMDD-NNN (also accept an optional
-# trailing token). Kept liberal but anchored to the ``gen-`` prefix so it can't be
-# spoofed by an arbitrary high-entropy blob.
-_GENESIS_ID_RE = re.compile(r"\bgen-\d{8}-\d{3,}\b")
+# Genesis deterministic episode ID: single-sourced from ids.EPISODE_ID_RE (F-02.1) — the real shape
+# is ``EP-YYYY-MM-DD.NNNN``. The former local ``gen-YYYYMMDD-NNN`` regex matched a format the system
+# never produces (dead branch); importing the authoritative pattern means a future ID-format change
+# can't silently drift the allowlist out of sync.
 
 # Tombstone hash values are hex HMAC-SHA256 digests (64 hex chars) that appear inside a
 # tombstone context. We exempt a bare 64-char hex token so the entropy scrubber does not
@@ -126,7 +126,7 @@ def _is_allowlisted(token: str) -> bool:
     so an actual key that happens to be all-hex is caught by pattern, not entropy.
     """
     return bool(
-        _GENESIS_ID_RE.fullmatch(token)
+        EPISODE_ID_RE.fullmatch(token)
         or _TOMBSTONE_HASH_RE.fullmatch(token)
         or _GIT_SHA_RE.fullmatch(token)
     )
