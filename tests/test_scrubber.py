@@ -6,10 +6,57 @@ import pytest
 
 from genesis.scrub.scrubber import (
     make_placeholder,
+    mask_home_paths,
     path_is_sensitive,
     scrub_text,
     shannon_entropy,
 )
+
+
+# --------------------------------------------------------------------------- #
+# D-FB-5: home-path masking at the capture door (username never reaches disk)  #
+# --------------------------------------------------------------------------- #
+
+def test_mask_home_paths_users_and_home():
+    assert mask_home_paths("/Users/alice/proj/x.py") == "~/proj/x.py"
+    assert mask_home_paths("/home/bob/.ssh/id_rsa") == "~/.ssh/id_rsa"
+    assert mask_home_paths("/Users/alice") == "~"                 # bare home dir
+
+
+def test_mask_home_paths_leaves_non_home_untouched_and_is_idempotent():
+    assert mask_home_paths("/usr/local/bin") == "/usr/local/bin"
+    # A mid-path segment literally named "Users" is NOT a home prefix → left intact (no corruption).
+    assert mask_home_paths("/opt/data/Users/notauser") == "/opt/data/Users/notauser"
+    once = mask_home_paths("/Users/alice/x")
+    assert mask_home_paths(once) == once                          # idempotent
+
+
+def test_scrub_text_masks_username_at_the_door(monkeypatch):
+    monkeypatch.delenv("GENESIS_LOCAL_HMAC_KEY", raising=False)
+    res = scrub_text("error at /Users/realname/secret-project/app.py line 4")
+    assert "realname" not in res.text          # the username never survives capture
+    assert "~/secret-project/app.py" in res.text
+
+
+# --------------------------------------------------------------------------- #
+# D-FB-6: keyed-or-absent fingerprint; capture never fail-louds on a missing key #
+# --------------------------------------------------------------------------- #
+
+def test_scrub_without_key_emits_kindonly_placeholder_and_does_not_raise(monkeypatch):
+    monkeypatch.delenv("GENESIS_LOCAL_HMAC_KEY", raising=False)
+    monkeypatch.delenv("GENESYS_LOCAL_HMAC_KEY", raising=False)
+    res = scrub_text("export API_KEY=sk-abcdef0123456789abcdef0123")   # must not raise (capture)
+    assert "<redacted:secret kind=" in res.text
+    assert "hash=" not in res.text                                     # no fingerprint when unkeyed
+
+
+def test_scrub_is_idempotent_across_keyed_and_unkeyed(monkeypatch):
+    text = "export API_KEY=sk-abcdef0123456789abcdef0123"
+    monkeypatch.setenv("GENESIS_LOCAL_HMAC_KEY", "k")
+    once = scrub_text(text).text                                       # keyed placeholder (has hash)
+    assert scrub_text(once).text == once                              # re-scrub is a no-op
+    monkeypatch.delenv("GENESIS_LOCAL_HMAC_KEY", raising=False)
+    assert scrub_text(once).text == once   # the keyed placeholder survives re-scrub even without a key
 
 
 # --------------------------------------------------------------------------- #
@@ -140,10 +187,20 @@ def test_r3_does_not_shield_a_real_key_that_matches_a_pattern():
 # Placeholder shape + idempotency                                              #
 # --------------------------------------------------------------------------- #
 
-def test_placeholder_shape():
+def test_placeholder_shape_keyed_and_unkeyed(monkeypatch):
+    # D-FB-6: no key set → kind-only placeholder (no hash → no confirm-a-guess oracle).
+    monkeypatch.delenv("GENESIS_LOCAL_HMAC_KEY", raising=False)
+    monkeypatch.delenv("GENESYS_LOCAL_HMAC_KEY", raising=False)
+    assert make_placeholder("aws_access_key_id", "AKIAIOSFODNN7EXAMPLE") == \
+        "<redacted:secret kind=aws_access_key_id>"
+
+    # Key set → keyed HMAC fingerprint present, and it is NOT the retired raw sha256 prefix.
+    import hashlib
+    monkeypatch.setenv("GENESIS_LOCAL_HMAC_KEY", "test-key")
     ph = make_placeholder("aws_access_key_id", "AKIAIOSFODNN7EXAMPLE")
-    assert ph.startswith("<redacted:secret kind=aws_access_key_id hash=")
-    assert ph.endswith(">")
+    assert ph.startswith("<redacted:secret kind=aws_access_key_id hash=") and ph.endswith(">")
+    unkeyed = hashlib.sha256(b"AKIAIOSFODNN7EXAMPLE").hexdigest()[:12]
+    assert f"hash={unkeyed}>" not in ph
 
 
 def test_scrub_is_idempotent():

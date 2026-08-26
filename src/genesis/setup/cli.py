@@ -16,16 +16,56 @@ Design constraints:
 from __future__ import annotations
 
 import argparse
+import secrets
 import sys
 from typing import Callable, TextIO
 
 from genesis.config import (
     DEFAULT_ASSISTANT,
     DEFAULT_PRINCIPAL,
+    HMAC_KEY_ENV,
     get_assistant_name,
+    get_local_hmac_key_optional,
     get_principal,
     write_identity_config,
 )
+
+
+def offer_hmac_key(*, reader: Callable[[str], str], out: TextIO) -> None:
+    """Offer to GENERATE the local redaction key when none is set (D-FB-4, F-01.1).
+
+    genesis-setup writes identity only; the DR-38 redaction path needs a keyed HMAC
+    (``GENESIS_LOCAL_HMAC_KEY``). With explicit consent this prints a fresh key ONCE and tells the
+    user where to store it — it NEVER writes the key to disk itself (the user owns the secret, same
+    pattern as the API key). If a key is already set, or the user declines, nothing is generated.
+    """
+    if get_local_hmac_key_optional() is not None:
+        out.write(f"\nA redaction key ({HMAC_KEY_ENV}) is already configured — nothing to do.\n")
+        return
+    out.write(
+        f"\nNo redaction key found. Genesis scrubs secrets at capture; a local key ({HMAC_KEY_ENV})\n"
+        "lets it correlate redactions and keeps redaction markers from being guessed. It is optional\n"
+        "(capture works without it) but recommended.\n"
+    )
+    try:
+        answer = reader("Generate a redaction key now? [y/N]: ").strip().lower()
+    except EOFError:
+        answer = ""
+    if answer not in ("y", "yes"):
+        out.write(
+            "Skipped. To create one later:\n"
+            f"  openssl rand -hex 32   →   export {HMAC_KEY_ENV}=<the value>\n"
+            "  (store it in a ~/.secrets/ file you source, same as your API key).\n"
+        )
+        return
+    key = secrets.token_hex(32)
+    # Printed ONCE; never persisted by Genesis. The user stores it themselves.
+    out.write(
+        "\nHere is your new redaction key — copy it now; Genesis does NOT store it:\n\n"
+        f"  export {HMAC_KEY_ENV}={key}\n\n"
+        "Put that line in a ~/.secrets/ file you source at login (same pattern as your API key).\n"
+        "If you lose it, generate a new one — existing redaction fingerprints simply won't correlate.\n"
+    )
 
 
 def _prompt(
@@ -86,6 +126,10 @@ def run_setup(
         f"\nSaved. Principal = {principal!r}, assistant = {assistant!r}.\n"
         f"Config written to {config_path}.\n"
     )
+
+    # D-FB-4: after identity, offer to generate the local redaction key if none exists (consent-gated,
+    # printed once, never persisted). First run no longer leaves the user with no key + no guidance.
+    offer_hmac_key(reader=reader, out=out)
     return {
         "principal": principal,
         "assistant": assistant,

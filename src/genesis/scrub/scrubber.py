@@ -15,11 +15,13 @@ Design notes / fidelity:
     out of scope for Step 0).
   - Deterministic detection is best-effort with false-negatives by design — that is
     exactly why the redaction verb (mechanism 2) exists as a backstop.
-  - The placeholder ``hash`` here is a short *non-keyed* content fingerprint used only
-    to correlate identical redactions within a stream (e.g. the same key appearing in
-    two projections). It is NOT the redaction-verb tombstone hash — that one is a keyed
-    HMAC (R4) and lives in ``redaction.py``. This fingerprint is intentionally truncated
-    and never a proof-of-what-was-there.
+  - The placeholder ``hash`` here is a short *keyed* (HMAC, ``GENESIS_LOCAL_HMAC_KEY``)
+    content fingerprint used only to correlate identical redactions within a stream
+    (e.g. the same key appearing in two projections) — and it is OMITTED entirely when no
+    key is set (D-FB-6). It is NOT the redaction-verb tombstone hash (also keyed, R4,
+    ``redaction.py``). The former unkeyed ``sha256(secret)[:12]`` was retired: truncation
+    stops it *identifying* an unknown secret but not *confirming a guessed one*. Never a
+    proof-of-what-was-there.
 
 R3 entropy allowlist (§4.2b.1): high-entropy detection MUST NOT flag known non-secret
 high-entropy shapes — git SHAs (provenance), Genesis deterministic IDs, and the
@@ -30,33 +32,70 @@ recursively eats its own tombstones. Implemented in ``_is_allowlisted``.
 from __future__ import annotations
 
 import hashlib
+import hmac
 import math
 import re
 from dataclasses import dataclass, field
 from typing import List, Optional
+
+from genesis.config import get_local_hmac_key_optional
 
 
 # --------------------------------------------------------------------------- #
 # Typed placeholder                                                           #
 # --------------------------------------------------------------------------- #
 
-def _fingerprint(secret: str) -> str:
-    """Short non-keyed correlation fingerprint for the *placeholder* only.
+def _fingerprint(secret: str) -> Optional[str]:
+    """Keyed correlation fingerprint for the *placeholder* only, or None when unkeyed (D-FB-6).
 
-    Not a proof-of-what-was-there (that is the keyed HMAC tombstone, R4). Truncated
-    so it cannot be a practical dictionary oracle on its own.
+    HMAC-SHA256 with the local key (``GENESIS_LOCAL_HMAC_KEY``) when set, truncated — it correlates
+    identical redactions within/across projections for a keyed user. When NO key is set it returns
+    None (the placeholder carries no hash): capture must never fail-loud on a missing key, and the
+    former unkeyed ``sha256(secret)[:12]`` was a confirm-a-guess oracle (hash a candidate, compare
+    the prefix) — retired. Still never a proof-of-what-was-there (that is the R4 tombstone).
     """
-    return hashlib.sha256(secret.encode("utf-8")).hexdigest()[:12]
+    key = get_local_hmac_key_optional()
+    if key is None:
+        return None
+    return hmac.new(key, secret.encode("utf-8"), hashlib.sha256).hexdigest()[:12]
 
 
 def make_placeholder(kind: str, secret: str) -> str:
-    """Build the typed placeholder: ``<redacted:secret kind=… hash=…>`` (§4.2b.1)."""
-    return f"<redacted:secret kind={kind} hash={_fingerprint(secret)}>"
+    """Build the typed placeholder (§4.2b.1): ``<redacted:secret kind=… hash=…>`` when a local key is
+    set, else ``<redacted:secret kind=…>`` (kind-only, no fingerprint) — D-FB-6."""
+    fp = _fingerprint(secret)
+    if fp is None:
+        return f"<redacted:secret kind={kind}>"
+    return f"<redacted:secret kind={kind} hash={fp}>"
 
 
-# Recognizes an already-emitted placeholder so re-scrubbing is idempotent and so the
-# entropy pass never treats a placeholder's own fingerprint as a fresh secret.
-_PLACEHOLDER_RE = re.compile(r"<redacted:secret kind=[^\s>]+ hash=[0-9a-f]+>")
+# Recognizes an already-emitted placeholder (with OR without a hash — D-FB-6) so re-scrubbing is
+# idempotent and the entropy pass never treats a placeholder's own fingerprint as a fresh secret.
+_PLACEHOLDER_RE = re.compile(r"<redacted:secret kind=[^\s>]+(?: hash=[0-9a-f]+)?>")
+
+
+# --------------------------------------------------------------------------- #
+# Home-path masking (D-FB-5): the real username never reaches disk or the model #
+# --------------------------------------------------------------------------- #
+
+# /Users/<name> and /home/<name> → ~ (keeps the rest of the path). Applied at the capture door for
+# both projections, BEFORE secret detection. Idempotent: masked text has no home prefix left. The
+# (?<![\w]) boundary anchors to a real path start (space/quote/=/start), so a mid-path segment that
+# happens to be named "Users" (e.g. /opt/data/Users/x) is NOT rewritten — masking a home prefix, not
+# corrupting an unrelated path.
+_HOME_PATH_RE = re.compile(r"(?<![\w])/(?:Users|home)/[^/\s]+")
+
+
+def mask_home_paths(text: str) -> str:
+    """Rewrite home-directory prefixes ``/Users/<name>`` / ``/home/<name>`` to ``~`` (D-FB-5).
+
+    A pure normalization applied at capture so the local username never enters the store or reaches
+    the model. Only the home *prefix* is rewritten; the trailing path is preserved
+    (``/Users/alice/proj`` → ``~/proj``). Non-home paths are untouched.
+    """
+    if not text:
+        return text
+    return _HOME_PATH_RE.sub("~", text)
 
 
 # --------------------------------------------------------------------------- #
@@ -233,6 +272,10 @@ def scrub_text(text: str) -> ScrubResult:
     if text is None:
         return ScrubResult(text=text or "", matches=[])
 
+    # D-FB-5: mask home-dir prefixes (/Users/<name>, /home/<name>) → ~ FIRST, at the capture door, so
+    # the real username never reaches disk or the model — then run secret detection on the masked text.
+    text = mask_home_paths(text)
+
     matches: List[ScrubMatch] = []
 
     # Protect already-emitted placeholders from both passes.
@@ -259,7 +302,7 @@ def scrub_text(text: str) -> ScrubResult:
                 secret = m.group(0)
                 placeholder = make_placeholder(_pat.kind, secret)
                 matches.append(
-                    ScrubMatch(_pat.kind, _fingerprint(secret), "pattern")
+                    ScrubMatch(_pat.kind, _fingerprint(secret) or "", "pattern")
                 )
                 return placeholder
             # Keep surrounding context groups; redact only the secret group.
@@ -271,7 +314,7 @@ def scrub_text(text: str) -> ScrubResult:
                 quote = secret[0]
                 inner = secret[1:-1]
             placeholder = make_placeholder(_pat.kind, inner)
-            matches.append(ScrubMatch(_pat.kind, _fingerprint(inner), "pattern"))
+            matches.append(ScrubMatch(_pat.kind, _fingerprint(inner) or "", "pattern"))
             # Reconstruct the whole match, replacing only the secret group's span
             # (offsets are relative to the start of the full match).
             full = m.group(0)
@@ -297,7 +340,7 @@ def scrub_text(text: str) -> ScrubResult:
         if shannon_entropy(token) < _ENTROPY_MIN_BITS_PER_CHAR:
             return token
         placeholder = make_placeholder("high_entropy", token)
-        matches.append(ScrubMatch("high_entropy", _fingerprint(token), "entropy"))
+        matches.append(ScrubMatch("high_entropy", _fingerprint(token) or "", "entropy"))
         return placeholder
 
     text = _ENTROPY_TOKEN_RE.sub(_entropy_repl, text)

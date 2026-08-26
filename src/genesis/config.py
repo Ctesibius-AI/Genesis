@@ -58,6 +58,17 @@ def get_local_hmac_key() -> bytes:
     return raw.encode("utf-8")
 
 
+def get_local_hmac_key_optional() -> bytes | None:
+    """Return the local HMAC key as bytes, or ``None`` when unset — never raises (D-FB-6).
+
+    Unlike ``get_local_hmac_key`` (fail-loud, for the R4 tombstone path), CAPTURE must never
+    fail-loud on a missing key — that would lose sessions. The placeholder fingerprint is keyed WHEN
+    a key is available and omitted when not; correlation is simply unavailable until a key is set.
+    """
+    raw = _getenv(HMAC_KEY_ENV)
+    return raw.encode("utf-8") if raw else None
+
+
 # --- Data root (P1) -------------------------------------------------------- #
 
 from pathlib import Path  # noqa: E402  (kept next to its use for clarity)
