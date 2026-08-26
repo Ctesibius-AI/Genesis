@@ -32,9 +32,11 @@ def test_verify_fails_closed_to_overrule(raw):
 
 
 @pytest.mark.parametrize("raw", BAD_REPLIES)
-def test_screen_fails_closed_to_pass(raw):
+def test_screen_fails_closed_to_flag(raw):
+    # D-FB-3(a): unparseable/garbage Screen output is now a SUSPICION → FLAG (never a quiet PASS);
+    # the Verifier adjudicates. Previously this defaulted to PASS — fail-OPEN mislabelled fail-closed.
     r = screen(FakeLLMBackend(raw), jot="j", manifest="m")
-    assert r.verdict == "PASS" and r.flags == []
+    assert r.verdict == "FLAG"
 
 
 @pytest.mark.parametrize("raw", BAD_REPLIES)

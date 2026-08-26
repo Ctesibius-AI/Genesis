@@ -19,8 +19,13 @@ def _edge(eid, fact):
     return GraphEdge(edge_id=eid, fact=fact, episodes=["EP-1"])
 
 
-def _run(tmp_path, backend, *, created, window, cfg, rng=None, chart=None, ride_along=""):
-    return run_ladder(FakeGraph(), tmp_path, "EP-1", window=window,
+def _run(tmp_path, backend, *, created, window, cfg, rng=None, chart=None, ride_along="", engine=None):
+    # The created edges are born PROVISIONAL in the engine by the spine; seed them so the gate's
+    # promotion/quarantine (D-FB-3) can read+write their verdict, as in the real flow.
+    g = engine if engine is not None else FakeGraph()
+    for e in created:
+        g.seed(e)
+    return run_ladder(g, tmp_path, "EP-1", window=window,
                       manifest="e1: a fact", created=created, backend=backend,
                       ts="2026-08-18T10:00:00+00:00", ride_along=ride_along,
                       cfg=cfg, rng=rng or random.Random(0), chart=chart or FalsePassChart())

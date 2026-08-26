@@ -82,11 +82,12 @@ def screen_raw(backend: LLMBackend, window: str, manifest: str, *,
         rendered = "; ".join(f"{h.edge_id}: entity '{h.entity}' not verbatim" for h in hints)
         user += f"\n<hints>{rendered}</hints>"
     raw = backend.complete(SCREEN_RAW_PROMPT, user, model=model)
-    d = safe_json_object(raw)  # fail-closed: {} on any parse failure
-    verdict = d.get("verdict", "PASS")
+    d = safe_json_object(raw)  # {} on any parse failure
+    # D-FB-3(a): parse-failure = SUSPICION → FLAG (never a quiet PASS); the Verifier adjudicates.
+    verdict = d.get("verdict", "FLAG")
     flags = d.get("flags", [])
     if not isinstance(verdict, str) or verdict not in ("PASS", "FLAG"):
-        verdict = "PASS"
+        verdict = "FLAG"
     if not isinstance(flags, list):
         flags = []
     return ScreenResult(verdict=verdict, flags=flags)

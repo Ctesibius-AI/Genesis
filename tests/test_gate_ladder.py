@@ -25,8 +25,11 @@ def test_ladder_cfg_takes_the_raw_window_path(tmp_path: Path):
     # A ladder cfg + raw_span (the window) => the Screen grounds on the raw window, not the jot.
     b = FakeLLMBackend('{"verdict": "PASS", "flags": []}')
     cfg = LadderConfig(shadow=True, audit_rate=0.0)
-    r = run_gate(FakeGraph(), tmp_path, "EP-1", jot="the demoted jot", manifest="e1: a fact",
-                 created=[GraphEdge("e1", "a fact", ["EP-1"])], backend=b,
+    g = FakeGraph()
+    e1 = GraphEdge("e1", "a fact", ["EP-1"])
+    g.seed(e1)  # created edges live in the engine (spine births them) — gate promotion reads/writes them
+    r = run_gate(g, tmp_path, "EP-1", jot="the demoted jot", manifest="e1: a fact",
+                 created=[e1], backend=b,
                  ts="2026-08-18T10:00:00+00:00", raw_span="the raw window text",
                  ladder=cfg, rng=random.Random(0), chart=FalsePassChart())
     assert r.verdict == "PASS"

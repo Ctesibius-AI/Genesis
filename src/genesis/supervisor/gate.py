@@ -12,7 +12,7 @@ from pathlib import Path
 
 from genesis.graph.engine import GraphEdge, GraphEngine, Verdict
 from genesis.journal.journal import JournalEntry, append_journal
-from genesis.supervisor.verdicts import set_verdict
+from genesis.supervisor.verdicts import promote_created, quarantine_created, set_verdict
 from genesis.workers.backend import LLMBackend
 from genesis.workers.screen import SCREEN_PROMPT, ScreenResult, screen
 from genesis.workers.verifier import VerifierRemedy, verify
@@ -64,17 +64,30 @@ def run_gate(engine: GraphEngine, data_root: Path, episode_id: str, jot: str, ma
     if result.verdict != "FLAG":
         append_journal(data_root, JournalEntry(ts=ts, action="gate-resolve", scope=episode_id,
                        after="pass", author="supervisor"))
+        # D-FB-3(b): a genuine Screen PASS promotes the created edges PROVISIONAL → CONFIRMED.
+        promote_created(engine, data_root, created, ts=ts, reason="screen-pass")
         return result
     append_journal(data_root, JournalEntry(ts=ts, action="gate-flag", scope=episode_id,
                    reason="screen major", author="supervisor"))
     # Pass the S1-S7 fidelity contract to the verifier (spec §8.5: contract = the rules
     # governing this case; for extraction flags that is the Screen's S1-S7 contract).
     fidelity_contract = contract or SCREEN_PROMPT
-    v = verify(backend, flag=str(result.flags), raw_span=raw_span, artifacts=manifest, contract=fidelity_contract)
+    try:
+        v = verify(backend, flag=str(result.flags), raw_span=raw_span, artifacts=manifest,
+                   contract=fidelity_contract)
+    except Exception as exc:  # noqa: BLE001 — D-FB-3(a): Verifier unavailable on a suspicion path
+        # Can't adjudicate the flag → QUARANTINE, never PASS. Nothing enters memory on a shrug.
+        quarantine_created(engine, data_root, created, ts=ts, reason=f"verifier-unavailable: {exc}")
+        append_journal(data_root, JournalEntry(ts=ts, action="gate-resolve", scope=episode_id,
+                       after="quarantined", reason="verifier-unavailable", author="supervisor"))
+        return result
     by_id = {e.edge_id: e for e in created}
     if v.remedy.target in by_id:
         apply_remedy(engine, data_root, by_id[v.remedy.target], v.remedy, ts=ts)
     outcome = "remedy-applied" if v.remedy.target in by_id else v.ruling.lower()
     append_journal(data_root, JournalEntry(ts=ts, action="gate-resolve", scope=episode_id,
                    after=outcome, reason=str(v.ruling), author="supervisor"))
+    # D-FB-3(b): a non-quarantine Verifier resolution (incl. post-amend) → CONFIRMED for the edges
+    # the remedy did not quarantine.
+    promote_created(engine, data_root, created, ts=ts, reason="verifier-resolved")
     return result

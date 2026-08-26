@@ -23,5 +23,7 @@ def test_supervise_commit_full_sequence(tmp_path: Path):
     assert out["created"] == ["new"]
     assert out["invalidated"] == ["old"]
     assert out["reverted"] == ["old"]                 # Judge said REVERT → reopened
-    assert g.get("new").verdict is Verdict.PROVISIONAL # born provisional
+    # D-FB-3(b): a genuine Screen PASS promotes the created edge PROVISIONAL → CONFIRMED (the gate's
+    # judgment now means something downstream; recall stops labelling it "[unverified]").
+    assert g.get("new").verdict is Verdict.CONFIRMED
     assert g.get("old").contested is True             # reverted

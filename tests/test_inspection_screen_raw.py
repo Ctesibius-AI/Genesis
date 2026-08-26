@@ -36,7 +36,8 @@ def test_tier0_hints_are_attached_to_the_prompt():
     assert "Genesis" in b.last["user"]                        # the soft hint rode along
 
 
-def test_fail_closed_on_garbage_reply_defaults_pass():
+def test_fail_closed_on_garbage_reply_defaults_flag():
+    # D-FB-3(a): garbage/unparseable raw-Screen output → FLAG (suspicion), never a quiet PASS.
     b = FakeLLMBackend("not json at all")
     r = screen_raw(b, window="w", manifest="m")
-    assert r.verdict == "PASS" and r.flags == []              # safe_json_object -> {}
+    assert r.verdict == "FLAG"                                # safe_json_object -> {} -> FLAG

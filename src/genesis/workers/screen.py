@@ -71,10 +71,11 @@ def screen(backend: LLMBackend, jot: str, manifest: str, *, model: str = TIER_SO
     user = f"<jot>{jot}</jot>\n<extraction>{manifest}</extraction>"
     raw = backend.complete(SCREEN_PROMPT, user, model=model)
     d = safe_json_object(raw)
-    # Guard: if strip_fences returned a partial/inner JSON object (missing top-level keys),
-    # default safely. The Screen must always produce verdict+flags.
-    verdict = d.get("verdict", "PASS")
+    # D-FB-3(a): parse-failure = SUSPICION, never a quiet PASS. Unparseable/garbage Screen output
+    # defaults to FLAG so the Verifier adjudicates — the Screen's own red line ("never a quiet PASS
+    # on a diagnosis (S3) or attribution loss (S2)") must hold when the output can't be trusted.
+    verdict = d.get("verdict", "FLAG")
     flags = d.get("flags", [])
     if not isinstance(verdict, str) or verdict not in ("PASS", "FLAG"):
-        verdict = "PASS"
+        verdict = "FLAG"
     return ScreenResult(verdict=verdict, flags=flags)

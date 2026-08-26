@@ -29,6 +29,7 @@ from genesis.inspection.sizeguard import size_route
 from genesis.inspection.tier0 import tier0_check
 from genesis.journal.journal import JournalEntry, append_journal
 from genesis.supervisor.gate import apply_remedy
+from genesis.supervisor.verdicts import promote_created, quarantine_created
 from genesis.workers.backend import LLMBackend
 from genesis.workers.screen import SCREEN_PROMPT, ScreenResult
 from genesis.workers.verifier import verify
@@ -93,14 +94,26 @@ def run_ladder(engine: GraphEngine, data_root: Path, episode_id: str, *, window:
     route = size_route(window, max_chars=cfg.max_window_chars)
 
     # ── Nested _verify closure: threads backend correctly, no module global ────────────────
-    def _verify(flag: str) -> str:
-        """Run Tier 2 (Opus), apply remedy under FROZEN fence, journal gate-flag + gate-resolve."""
+    def _verify(flag: str) -> str | None:
+        """Run Tier 2 (Opus), apply remedy under FROZEN fence, journal gate-flag + gate-resolve.
+
+        Returns the Verifier ruling, or None when the Verifier is UNAVAILABLE (backend raised) —
+        D-FB-3(a): a suspicion the Verifier couldn't adjudicate must be QUARANTINED by the caller,
+        never PASSed. The caller decides quarantine (suspicion path) vs let-pass (audit spot-check).
+        """
         append_journal(data_root, JournalEntry(
             ts=ts, action="gate-flag", scope=episode_id,
             reason="ladder major", author="supervisor",
         ))
-        v = verify(backend, flag=flag, raw_span=window, artifacts=manifest,
-                   contract=contract or SCREEN_PROMPT)
+        try:
+            v = verify(backend, flag=flag, raw_span=window, artifacts=manifest,
+                       contract=contract or SCREEN_PROMPT)
+        except Exception as exc:  # noqa: BLE001 — Verifier unavailable; signal the caller (D-FB-3a)
+            append_journal(data_root, JournalEntry(
+                ts=ts, action="gate-resolve", scope=episode_id,
+                after="verifier-unavailable", reason=str(exc), author="supervisor",
+            ))
+            return None
         by_id = {e.edge_id: e for e in created}
         if v.remedy.target in by_id:
             apply_remedy(engine, data_root, by_id[v.remedy.target], v.remedy, ts=ts)
@@ -111,9 +124,18 @@ def run_ladder(engine: GraphEngine, data_root: Path, episode_id: str, *, window:
         ))
         return v.ruling
 
+    def _resolve_suspicion(ruling: str | None, *, where: str) -> None:
+        """A suspicion path: promote the non-quarantined created edges (D-FB-3b), or — if the
+        Verifier was unavailable — QUARANTINE them (D-FB-3a). Never a quiet PASS."""
+        if ruling is None:
+            quarantine_created(engine, data_root, created, ts=ts,
+                               reason=f"verifier-unavailable ({where})")
+        else:
+            promote_created(engine, data_root, created, ts=ts, reason=f"verifier-resolved ({where})")
+
     # ── Size-routed: skip Tier 1, go straight to Tier 2 ─────────────────────────────────
     if route == "verifier":
-        _verify(flag="size-guard: window too large to screen")
+        _resolve_suspicion(_verify(flag="size-guard: window too large to screen"), where="size-route")
         return ScreenResult(verdict="FLAG", flags=[{"code": "SIZE", "artifact": episode_id}])
 
     # ── Tier 1: Screen on raw window (+ Tier 0 soft hints) ───────────────────────────────
@@ -121,12 +143,12 @@ def run_ladder(engine: GraphEngine, data_root: Path, episode_id: str, *, window:
 
     # ── Route to Tier 2: Screen flagged (DR-30 verify-on-flag) ───────────────────────────
     if result.verdict == "FLAG":
-        _verify(flag=str(result.flags))
+        _resolve_suspicion(_verify(flag=str(result.flags)), where="screen-flag")
         return result
 
     # ── Route to Tier 2: live Tier 0 hard flag (overrides Screen PASS) ───────────────────
     if hard_route_live:
-        _verify(flag=str([vars(f) for f in t0.hard_flags]))
+        _resolve_suspicion(_verify(flag=str([vars(f) for f in t0.hard_flags])), where="tier0-hard")
         return result
 
     # ── PASS path: record + maybe sampling audit (CS2) ───────────────────────────────────
@@ -135,10 +157,16 @@ def run_ladder(engine: GraphEngine, data_root: Path, episode_id: str, *, window:
         ruling = _verify(flag="sampling-audit of a passed commit")
         if ruling == "UPHOLD":
             chart.record_false_pass()  # Screen wrongly passed a bad commit
+        # The audit is a spot-check of a PASS, NOT a suspicion: a verifier hiccup here (ruling None)
+        # leaves the Screen's PASS standing. Either way, promote the non-quarantined created edges
+        # (any remedy already fenced/quarantined the bad one). D-FB-3(b).
+        promote_created(engine, data_root, created, ts=ts, reason="screen-pass (audited)")
     else:
         append_journal(data_root, JournalEntry(
             ts=ts, action="gate-resolve", scope=episode_id,
             after="pass", author="supervisor",
         ))
+        # D-FB-3(b): a genuine Screen PASS promotes the created edges → CONFIRMED.
+        promote_created(engine, data_root, created, ts=ts, reason="screen-pass")
 
     return result
