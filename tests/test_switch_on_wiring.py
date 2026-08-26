@@ -36,13 +36,23 @@ def test_live_hook_passes_wal_and_cursor_delta(monkeypatch, tmp_path):
     assert captured.get("cursor_delta") is True, "live capture must bank only the delta"
 
 
+class _FakeEngine:
+    """A stand-in for GraphitiEngine that records close() (graph-harness T2 lifecycle)."""
+    def __init__(self) -> None:
+        self.closed = 0
+
+    def close(self) -> None:
+        self.closed += 1
+
+
 def test_live_drain_runs_the_ladder_shadow_off(monkeypatch, tmp_path):
     """genesis-worker's run_once must drain through the inspection ladder with shadow=False
     (Tier 0 routing live, per owner ruling)."""
     captured: dict = {}
+    eng = _FakeEngine()
 
     monkeypatch.setattr("genesis.doctor.doctor_requeue", lambda data_root: [])
-    monkeypatch.setattr(live, "build_live", lambda data_root: ("ENG", "BK", "SC"))
+    monkeypatch.setattr(live, "build_live", lambda data_root: (eng, "BK", "SC"))
 
     def fake_drain(data_root, engine, backend, *, ts, **kw):
         captured.update(kw)
@@ -60,3 +70,22 @@ def test_live_drain_runs_the_ladder_shadow_off(monkeypatch, tmp_path):
     assert captured.get("scorer") == "SC", "the real relatedness scorer stays wired"
     assert captured.get("chart") is not None, "the audit control chart must be supplied"
     assert captured.get("rng") is not None, "the audit RNG must be supplied"
+    assert eng.closed == 1, "T2: run_once must close (SAVE+shutdown) the store after the pass"
+
+
+def test_run_once_closes_store_even_when_drain_errors(monkeypatch, tmp_path):
+    """graph-harness T2: the store is closed (persisted) even if the drain raises — durability of
+    whatever committed before the error, and no leaked embedded server."""
+    eng = _FakeEngine()
+    monkeypatch.setattr("genesis.doctor.doctor_requeue", lambda data_root: [])
+    monkeypatch.setattr(live, "build_live", lambda data_root: (eng, "BK", "SC"))
+
+    def boom_drain(*a, **k):
+        raise RuntimeError("drain blew up mid-pass")
+
+    monkeypatch.setattr("genesis.extraction.drain.drain_once", boom_drain)
+
+    import pytest
+    with pytest.raises(RuntimeError, match="drain blew up"):
+        live.run_once(tmp_path, now="2026-08-19T10:00:00+00:00")
+    assert eng.closed == 1, "close() must run in finally, even on a drain exception"

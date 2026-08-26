@@ -18,10 +18,13 @@ Key design decisions:
 from __future__ import annotations
 
 import asyncio
+import logging
 import subprocess
 import threading
 from datetime import datetime, timezone
 from typing import Any
+
+_log = logging.getLogger("genesis.graph")
 
 # -- graphiti-core and friends (only imported when this module is loaded) ----------
 from graphiti_core import Graphiti
@@ -415,7 +418,23 @@ class GraphitiCoreClient:
         self._run(_create())
 
     def close(self) -> None:
-        """Shut down the embedded driver and event loop (best-effort)."""
+        """Persist the store, then shut the embedded driver and event loop down (graph-harness T2).
+
+        The embedded FalkorDB lives in redislite; its dataset only reaches the RDB file (`db_path`)
+        on an explicit SAVE. This method issues that SAVE **first** (while the connection is live),
+        then closes the async driver and stops the loop. Without the SAVE, a clean-looking exit left
+        an empty store — "processed N" with no memories on disk. Each leg is best-effort and logged:
+        shutdown must not raise, but a FAILED save is a real durability problem and must be visible
+        (never silently swallowed).
+        """
+        redis_inst = getattr(self, "_redis_inst", None)
+        if redis_inst is not None:
+            try:
+                redis_inst.save()  # synchronous RDB write to db_path (redislite SAVE)
+            except Exception:  # noqa: BLE001 — durability failure: surface it loudly, don't crash close
+                _log.warning("GraphitiCoreClient.close: store SAVE failed — writes may not persist",
+                             exc_info=True)
+
         async def _close() -> None:
             try:
                 await self._driver.close()
@@ -427,6 +446,17 @@ class GraphitiCoreClient:
         except Exception:
             pass
         self._loop.call_soon_threadsafe(self._loop.stop)
+
+        # Shut the embedded redis-server down cleanly AFTER the SAVE + driver close. Without this the
+        # server orphans — a `.settings` sidecar with a live socket but (until it is finally reaped) a
+        # store that only lives in RAM. That orphan is the durability ILLUSION behind the memory loss:
+        # readers connect to it and "see" data that is never on disk. Best-effort; the SAVE above is
+        # the durability guarantee, this is the clean teardown (T2).
+        if redis_inst is not None:
+            try:
+                redis_inst.shutdown()
+            except Exception:  # noqa: BLE001 — teardown hygiene; the RDB is already flushed
+                _log.warning("GraphitiCoreClient.close: redis shutdown failed", exc_info=True)
 
 
 # ---------------------------------------------------------------------------

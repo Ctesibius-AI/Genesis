@@ -10,7 +10,6 @@ Read-only: it never writes, never touches the serial commit lane.
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 
 from genesis.recall.scorer import Channel, ChannelResult, EmptyCause, score_channels
 from genesis.recall.service import RecallResult, RecallService
@@ -44,6 +43,21 @@ class RecallDaemon:
             _log.warning("recall serve_search degraded", exc_info=True)  # F-17.2: a real bug isn't hidden
             return _honest_empty(EmptyCause.DEGRADED)
 
+    def close(self) -> None:
+        """Release the warm store on daemon shutdown (graph-harness T2 hygiene).
+
+        Recall is READ-ONLY (never adds episodes), so no writes are at risk — but closing the client
+        stops its driver + event-loop thread cleanly. Best-effort: delegates to the engine's close
+        when the underlying service exposes one; a fake/absent path is a no-op, never raised.
+        """
+        engine = getattr(self._service, "_engine", None)
+        closer = getattr(engine, "close", None)
+        if callable(closer):
+            try:
+                closer()
+            except Exception:  # noqa: BLE001 — shutdown hygiene, never crash the caller
+                _log.warning("RecallDaemon.close: engine shutdown failed", exc_info=True)
+
 
 def build_recall_daemon(data_root, *, db_path: str | None = None, env=None) -> RecallDaemon:  # pragma: no cover - live only
     """Build a warm, read-only RecallDaemon over the live graph client + embedder (F-17.1; D-SUP-7).
@@ -71,8 +85,11 @@ def build_recall_daemon(data_root, *, db_path: str | None = None, env=None) -> R
     from genesis.linking.relatedness import real_scorer
     from genesis.recall.search_backend import real_recall_search
 
-    resolved_db = db_path or str(Path(data_root) / "graph.db")
-    client = real_client(db_path=resolved_db, env=env)
+    # ONE PATH LAW (graph-harness T1): db_path passes straight through (default None) so
+    # build_graphiti_client fail-loud-resolves GENESIS_DB_PATH (D-GCW-2) — the SAME store the writer
+    # now uses. No local `data_root/graph.db` default: it let the daemon read a different file than
+    # the worker wrote. data_root is unused for the store here (kept for signature stability).
+    client = real_client(db_path=db_path, env=env)
     # Recall never adds episodes; the clock is only used on the write path — a real one is harmless.
     engine = GraphitiEngine(client, clock=lambda: datetime.now(tz=timezone.utc).isoformat())
     search = real_recall_search(engine)   # semantic (bge-small) + keyword (bm25); allow-list-scoped

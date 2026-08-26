@@ -130,3 +130,34 @@ def test_link_episode_records_typed_edge():
     eng, c = _engine_with(ClientEdge(uuid="e1", fact="f", episodes=["ep-0"]))
     eng.link_episode("EP-1", "EP-2", "NEXT_EPISODE")
     assert ("EP-1", "EP-2", "NEXT_EPISODE") in c._typed
+
+
+# --- graph-harness T2: GraphitiEngine.close() delegates to the client's shutdown/persist --- #
+
+class _ClosableClient:
+    def __init__(self, *, boom: bool = False) -> None:
+        self.closed = 0
+        self._boom = boom
+
+    def close(self) -> None:
+        self.closed += 1
+        if self._boom:
+            raise RuntimeError("driver shutdown failed")
+
+
+def test_close_delegates_to_client_close():
+    c = _ClosableClient()
+    GraphitiEngine(c, clock=lambda: "t").close()
+    assert c.closed == 1  # the real client SAVEs the RDB + stops its loop here
+
+
+def test_close_is_noop_when_client_has_no_close():
+    # FakeGraphitiClient exposes no close(); engine.close() must be a safe no-op, never AttributeError.
+    eng, _ = _engine_with(ClientEdge(uuid="e1", fact="f", episodes=["ep-0"]))
+    eng.close()  # no raise
+
+
+def test_close_swallows_and_logs_client_error():
+    c = _ClosableClient(boom=True)
+    GraphitiEngine(c, clock=lambda: "t").close()  # best-effort: logs, does not raise
+    assert c.closed == 1

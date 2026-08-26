@@ -9,10 +9,13 @@ only (F-11); invalidations are read post-commit via `invalidated_in_window`.
 
 from __future__ import annotations
 
+import logging
 from typing import Callable
 
 from genesis.graph.client import ClientEdge, CommitMarker, GraphitiClient
 from genesis.graph.engine import AddResult, GraphEdge, Verdict
+
+_log = logging.getLogger("genesis.graph")
 
 
 def to_graph_edge(ce: ClientEdge) -> GraphEdge:
@@ -46,6 +49,22 @@ class GraphitiEngine:
         self._marker = marker if marker is not None else CommitMarker()
         self._clock = clock if clock is not None else _no_clock
         self._windows: dict[str, tuple[str, str]] = {}
+
+    def close(self) -> None:
+        """Flush + shut the underlying store down cleanly (graph-harness T2).
+
+        Delegates to the client's ``close()`` when it has one (the real GraphitiCoreClient SAVEs the
+        embedded redislite RDB and stops its driver/loop). Best-effort and idempotent-safe: a client
+        without ``close`` (e.g. a test fake) or a shutdown hiccup is logged, never raised — closing
+        must not mask the caller's result. The WRITER must call this so a pass's writes reach disk.
+        """
+        closer = getattr(self._client, "close", None)
+        if closer is None:
+            return
+        try:
+            closer()
+        except Exception:  # noqa: BLE001 — shutdown is best-effort; surface it in logs, never crash
+            _log.warning("GraphitiEngine.close: client shutdown failed", exc_info=True)
 
     def add_episode(self, episode_id: str, content: str) -> AddResult:
         start_token, start_ts = self._marker.issue(self._clock())

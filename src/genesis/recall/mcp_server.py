@@ -75,8 +75,15 @@ def main() -> None:  # pragma: no cover - live entrypoint (stdio transport, warm
 
     from genesis.recall.daemon import build_recall_daemon
 
-    daemon = build_recall_daemon(os.environ.get("GENESIS_DATA_ROOT", "."),
-                                 db_path=os.environ.get("GENESIS_DB_PATH"))
+    # ONE PATH LAW (graph-harness T1): the STORE is resolved by build_graphiti_client from
+    # GENESIS_DB_PATH (D-GCW-2 fail-loud) — NOT passed here. Previously this read a `.`-defaulted
+    # GENESIS_DATA_ROOT and derived the store from it, so with GENESIS_DB_PATH unset the daemon could
+    # silently open ./graph.db (the F-17.3 danger) and point recall at the wrong/empty store. data_root
+    # is passed for signature stability only; it no longer governs the store.
+    # NOTE (routed, not reconciled here): GENESIS_DATA_ROOT vs GENESIS_DATA is an unresolved
+    # data-root naming duplication (installer.py:59 sets both) — owner decision pending; unrelated to
+    # the store path, which is now GENESIS_DB_PATH end-to-end.
+    daemon = build_recall_daemon(os.environ.get("GENESIS_DATA_ROOT", "."))  # db_path=None → GENESIS_DB_PATH
     build_recall_mcp_server(daemon).run()  # stdio by default; http is the D-GCW-1 opt-in
 
 

@@ -40,6 +40,13 @@ def build_live(data_root: Path, *, db_path: str | None = None):
     All heavy imports (graphiti-core, anthropic, fastembed) happen lazily inside this function.
     Safe to import at module level in any environment; never call in the offline suite.
 
+    Store path — ONE PATH LAW (graph-harness T1): `db_path` is passed straight through to
+    `real_client` (default None), so `build_graphiti_client` resolves `GENESIS_DB_PATH` fail-loud
+    (D-GCW-2). There is deliberately NO local `data_root/graph.db` default: it silently diverged
+    from the installer/daemon store (`GENESIS_DB_PATH = stores/<wsid>/graph.db`) — the worker wrote
+    one file, the daemon read another, and the first live memories evaporated. `data_root` governs
+    the ledger/WAL only, never the graph store.
+
     Returns:
         Tuple of (GraphitiEngine, AnthropicLLMBackend, real_scorer_instance).
     """
@@ -50,8 +57,7 @@ def build_live(data_root: Path, *, db_path: str | None = None):
     from genesis.linking.relatedness import real_scorer  # noqa: PLC0415
     from genesis.workers.backend import AnthropicLLMBackend  # noqa: PLC0415
 
-    resolved_db = db_path or str(data_root / "graph.db")
-    client = real_client(db_path=resolved_db)
+    client = real_client(db_path=db_path)  # None → build_graphiti_client fail-loud-resolves GENESIS_DB_PATH
 
     from datetime import datetime, timezone  # noqa: PLC0415 — stdlib, always present
 
@@ -97,13 +103,20 @@ def run_once(data_root: Path, *, now: str, window: int = 5,
     # (Sonnet) + Verifier (Opus) + 5% audit are live. The chart is fresh per pass — cross-run
     # control-chart persistence is a documented follow-up. ride_along stays "" until the
     # grapher supplies an adjacent-episode corpus (shadow of that check widens harmlessly).
-    return drain_once(
-        data_root, engine, backend, ts=now, scorer=scorer,
-        window=window, time_budget_s=time_budget_s,
-        ladder=LadderConfig(shadow=False),
-        rng=random.Random(),
-        chart=FalsePassChart(),
-    )
+    try:
+        return drain_once(
+            data_root, engine, backend, ts=now, scorer=scorer,
+            window=window, time_budget_s=time_budget_s,
+            ladder=LadderConfig(shadow=False),
+            rng=random.Random(),
+            chart=FalsePassChart(),
+        )
+    finally:
+        # LIFECYCLE (graph-harness T2): flush + shut the embedded store down cleanly so this pass's
+        # writes reach the RDB on disk. Without this the in-memory FalkorDB evaporated at process
+        # exit — "processed N" with an empty store. In `finally` so a drain error still persists
+        # whatever committed before it. Best-effort: a close hiccup must not mask the drain result.
+        engine.close()
 
 
 # ---------------------------------------------------------------------------
