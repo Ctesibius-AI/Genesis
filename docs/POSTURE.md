@@ -1,8 +1,8 @@
 # Genesis — Posture & Guarantees
 
 *Hand-written (Round D, D-C): these are the design-posture statements a source-generator cannot write.
-They describe ratified decisions and the honest current state — not aspirations. One line below is
-marked **[OWNER TO CONFIRM]** and must be filled by the owner; it is not invented here.*
+They describe ratified decisions and the honest current state — not aspirations. The owner attestation
+below is the owner's own ratified words.*
 
 ---
 
@@ -32,7 +32,10 @@ quarantine-drop; invalidation-drop; self-view-only DEEP tier; no `ReleaseContext
 **facts, decisions, tasks, entities** — never a profile of the user, and recall returns none. A gated,
 opt-in persona **could** return only as a roadmap module behind explicit consent; it is not in this build.
 
-> **Owner attestation:** _[OWNER TO CONFIRM — the owner supplies this sentence; it is not drafted here.]_
+> **Owner attestation:** _I attest as the project owner: the persona profiler was removed from Genesis
+> before its open-source publication (D-GCW-6 / BT-4b), no maintained variant of Genesis retains it, and
+> it exists only in private development history. Any future persona capability would ship as a separate,
+> explicitly opt-in module — never as dormant code in this build._
 
 ---
 

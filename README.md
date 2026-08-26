@@ -155,6 +155,9 @@ export GENESIS_DATA="$HOME/.genesis/data"
 | `genesis-hook`    | Claude Code hook entry point (reads hook JSON).     |
 | `genesis-backfill`| Backfill discovery over existing data.              |
 | `genesis-console` | Console dashboard.                                  |
+| `genesis-save-moment` | Materialize the current `/save` window into memory. |
+| `genesis-install` | Wire a workspace (project-local hooks + recall MCP + `/save`). |
+| `genesis-recall-mcp` | Recall MCP server (read-only, allow-list-scoped).   |
 
 ---
 
@@ -169,7 +172,7 @@ config file for identity:
 | `GENESIS_PRINCIPAL`      | Who the memory is for. Overrides the config file.              |
 | `GENESIS_ASSISTANT`      | Assistant name (default `Daimon`).                             |
 | `GENESIS_CONFIG`         | Override the config-file location (default `~/.genesis/config.json`). |
-| `GENESIS_LOCAL_HMAC_KEY` | Keyed HMAC for redaction tombstones. Never commit or log it.   |
+| `GENESIS_LOCAL_HMAC_KEY` | Keyed HMAC for redaction tombstones **and** placeholder fingerprints (D-FB-6): when set, redaction fingerprints are keyed; when unset, they are omitted (never an unkeyed confirm-a-guess hash). `genesis-setup` offers to generate it (printed once, stored by you — never persisted by Genesis). On macOS the live worker reads the Anthropic key from the Keychain (account `genesis`); other platforms use the env var. Never commit or log it. |
 
 ---
 

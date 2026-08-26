@@ -111,6 +111,17 @@ never claims "no memories."
 
 ---
 
+## Diary briefing — drop-order under a token budget
+*Source of truth: `diary/briefing.py` `_DROP_ORDER` / `_NEVER_DROP`. When the recent-days briefing
+exceeds its token budget, whole sections are dropped left-to-right in this order:*
+
+`TOP OF MIND → RECENT SESSIONS → OPEN THREADS`
+
+Two sections are **never dropped** (`_NEVER_DROP`): **COMMITMENTS** and **OPEN QUESTIONS** — *deadlines
+are never buried; clarifications are never lost.*
+
+---
+
 ## Hook wiring (Claude Code)
 *Source of truth: `hooks/wiring.py` + `install/installer.py`. The installer writes ONLY to
 `<workspace>/.claude/settings.json` (project-local, never `~/.claude`).*
