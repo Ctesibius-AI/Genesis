@@ -52,6 +52,26 @@ def _run(script: str, env: dict) -> subprocess.CompletedProcess:
                           capture_output=True, text=True, timeout=180)
 
 
+def test_close_raises_persistence_error_when_save_fails(tmp_path: Path, monkeypatch):
+    """harness-savefail: if the redislite SAVE fails, close() must raise PersistenceError (fail loud)
+    rather than log-and-return — so the worker never reports success over a non-durable store."""
+    from genesis.graph.client import PersistenceError
+    from genesis.graph.graphiti_backend import build_graphiti_client
+
+    monkeypatch.setenv("GENESIS_DB_PATH", str(tmp_path / "graph.db"))
+    monkeypatch.setenv("GENESIS_GROUP_ID", "savefail")
+    monkeypatch.setenv("GENESIS_DATA", str(tmp_path))
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "dummy-not-called")
+    monkeypatch.setenv("GRAPHITI_TELEMETRY_ENABLED", "false")
+
+    c = build_graphiti_client()
+    def _boom_save():
+        raise OSError("simulated: disk full")
+    c._redis_inst.save = _boom_save  # type: ignore[attr-defined]
+    with pytest.raises(PersistenceError):
+        c.close()
+
+
 def test_write_in_process_a_is_readable_in_fresh_process_b(tmp_path: Path):
     db_path = tmp_path / "graph.db"
     env = {

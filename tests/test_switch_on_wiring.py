@@ -37,12 +37,20 @@ def test_live_hook_passes_wal_and_cursor_delta(monkeypatch, tmp_path):
 
 
 class _FakeEngine:
-    """A stand-in for GraphitiEngine that records close() (graph-harness T2 lifecycle)."""
-    def __init__(self) -> None:
+    """A stand-in for GraphitiEngine that records close() (graph-harness T2 lifecycle).
+
+    ``persist_fails=True`` makes close() raise PersistenceError, simulating a failed store SAVE
+    (harness-savefail) so the run_once revert-and-fail-loud path can be exercised offline.
+    """
+    def __init__(self, *, persist_fails: bool = False) -> None:
         self.closed = 0
+        self._persist_fails = persist_fails
 
     def close(self) -> None:
         self.closed += 1
+        if self._persist_fails:
+            from genesis.graph.client import PersistenceError
+            raise PersistenceError("SAVE failed (simulated)")
 
 
 def test_live_drain_runs_the_ladder_shadow_off(monkeypatch, tmp_path):
@@ -89,3 +97,34 @@ def test_run_once_closes_store_even_when_drain_errors(monkeypatch, tmp_path):
     with pytest.raises(RuntimeError, match="drain blew up"):
         live.run_once(tmp_path, now="2026-08-19T10:00:00+00:00")
     assert eng.closed == 1, "close() must run in finally, even on a drain exception"
+
+
+def test_run_once_failed_persist_reverts_entries_and_fails_loud(monkeypatch, tmp_path):
+    """harness-savefail: when the store SAVE fails at close(), run_once must (a) RE-RAISE
+    PersistenceError (so the worker never reports success) and (b) revert THIS pass's entries from
+    DONE back to queued (Extracted.NO), so the ledger agrees with the non-durable store."""
+    import pytest
+
+    from genesis.graph.client import PersistenceError
+    from genesis.ledger.entry import Extracted, LedgerEntry, Links, Provenance
+    from genesis.ledger.store import append, read_all, update
+
+    # Seed a ledger entry that drain "processed" (marked DONE) this pass.
+    eid = "EP-savefail-1"
+    entry = LedgerEntry(entry_id=eid, ts="2026-08-19T10:00:00+00:00", summary="jot",
+                        provenance=Provenance(eid, "a", "b", ["the principal"]),
+                        links=Links(session_id="s"), extracted=Extracted.DONE)
+    append(tmp_path, entry)
+
+    eng = _FakeEngine(persist_fails=True)
+    monkeypatch.setattr("genesis.doctor.doctor_requeue", lambda data_root: [])
+    monkeypatch.setattr(live, "build_live", lambda data_root: (eng, "BK", "SC"))
+    monkeypatch.setattr("genesis.extraction.drain.drain_once",
+                        lambda *a, **k: [eid])  # drain reports it processed the entry
+
+    with pytest.raises(PersistenceError):
+        live.run_once(tmp_path, now="2026-08-19T10:00:00+00:00")
+
+    # The entry must be back to queued — done⇔durable, and this pass did NOT persist.
+    reverted = {e.entry_id: e for e in read_all(tmp_path)}[eid]
+    assert reverted.extracted is Extracted.NO, "failed persist must revert DONE → queued"

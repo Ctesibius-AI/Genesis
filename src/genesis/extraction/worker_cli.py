@@ -23,10 +23,19 @@ def _cmd_once(args: argparse.Namespace) -> int:
     from datetime import datetime, timezone  # noqa: PLC0415 — stdlib
 
     from genesis.extraction.live import run_once  # noqa: PLC0415
+    from genesis.graph.client import PersistenceError  # noqa: PLC0415
 
     data_root = Path(args.data_root)
     now = datetime.now(tz=timezone.utc).isoformat()
-    processed = run_once(data_root, now=now)
+    try:
+        processed = run_once(data_root, now=now)
+    except PersistenceError as exc:
+        # FAIL LOUD (harness-savefail): the store did NOT persist this pass. "processed N" is never
+        # the last word — this pass's entries were reverted to queued and will re-extract next run.
+        print(f"PERSISTENCE FAILURE: the store did not persist this pass ({exc}); its entries were "
+              f"reverted to queued — re-run the worker to re-extract. Nothing was durably saved.",
+              file=sys.stderr)
+        return 2
     print(f"processed {len(processed)}: {processed}")
     return 0
 

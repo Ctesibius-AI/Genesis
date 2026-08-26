@@ -46,7 +46,7 @@ from graphiti_core.utils.maintenance.graph_data_operations import retrieve_episo
 from fastembed import TextEmbedding
 
 # -- our Protocol types (no graphiti dependency) -----------------------------------
-from genesis.graph.client import AddEpisodeResults, ClientEdge
+from genesis.graph.client import AddEpisodeResults, ClientEdge, PersistenceError
 
 # Previous-episode context window. graphiti's add_episode defaults to the **10** most-recent
 # prior episodes, sent RAW to the LLM on every extraction (to resolve pronouns/references).
@@ -428,12 +428,17 @@ class GraphitiCoreClient:
         (never silently swallowed).
         """
         redis_inst = getattr(self, "_redis_inst", None)
+        save_error: Exception | None = None
         if redis_inst is not None:
             try:
                 redis_inst.save()  # synchronous RDB write to db_path (redislite SAVE)
-            except Exception:  # noqa: BLE001 — durability failure: surface it loudly, don't crash close
-                _log.warning("GraphitiCoreClient.close: store SAVE failed — writes may not persist",
-                             exc_info=True)
+            except Exception as exc:  # noqa: BLE001 — durability FAILURE: fail loud (harness-savefail)
+                # Do NOT swallow: a failed SAVE means this pass's writes are not on disk. Record it,
+                # finish teardown, then raise PersistenceError so the worker reports failure — never
+                # "processed N" over an empty store. Logged AND raised (visible even if a caller eats it).
+                save_error = exc
+                _log.error("GraphitiCoreClient.close: store SAVE FAILED — writes did NOT persist",
+                           exc_info=True)
 
         async def _close() -> None:
             try:
@@ -457,6 +462,10 @@ class GraphitiCoreClient:
                 redis_inst.shutdown()
             except Exception:  # noqa: BLE001 — teardown hygiene; the RDB is already flushed
                 _log.warning("GraphitiCoreClient.close: redis shutdown failed", exc_info=True)
+
+        if save_error is not None:
+            raise PersistenceError(
+                "store SAVE failed; this pass's writes did NOT persist") from save_error
 
 
 # ---------------------------------------------------------------------------

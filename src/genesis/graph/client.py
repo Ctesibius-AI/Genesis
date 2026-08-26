@@ -14,6 +14,16 @@ from dataclasses import dataclass, field
 from typing import Protocol
 
 
+class PersistenceError(RuntimeError):
+    """The store's durable SAVE failed — writes did NOT reach disk (harness-savefail).
+
+    Raised out of the client/engine close path so a failed persist FAILS LOUD instead of being
+    logged-and-swallowed: the worker must never report "processed N" while the store is empty.
+    Lives here (offline-safe) so the adapter + live runner can reference it without importing
+    graphiti-core.
+    """
+
+
 @dataclass
 class ClientEdge:
     uuid: str

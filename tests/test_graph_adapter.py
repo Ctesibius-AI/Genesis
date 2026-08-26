@@ -161,3 +161,16 @@ def test_close_swallows_and_logs_client_error():
     c = _ClosableClient(boom=True)
     GraphitiEngine(c, clock=lambda: "t").close()  # best-effort: logs, does not raise
     assert c.closed == 1
+
+
+def test_close_reraises_persistence_error():
+    """harness-savefail: a durability failure (SAVE did not reach disk) must FAIL LOUD — the
+    PersistenceError propagates out of engine.close(), unlike ordinary teardown noise."""
+    from genesis.graph.client import PersistenceError
+
+    class _PersistFail:
+        def close(self):
+            raise PersistenceError("SAVE failed")
+
+    with pytest.raises(PersistenceError):
+        GraphitiEngine(_PersistFail(), clock=lambda: "t").close()

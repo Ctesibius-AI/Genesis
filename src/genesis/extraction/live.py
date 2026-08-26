@@ -12,6 +12,8 @@ import subprocess
 import time
 from pathlib import Path
 
+from genesis.graph.client import PersistenceError  # offline-safe (no graphiti import)
+
 DATA_ROOT_DEFAULT = Path.home() / ".genesis" / "data"
 
 
@@ -103,20 +105,51 @@ def run_once(data_root: Path, *, now: str, window: int = 5,
     # (Sonnet) + Verifier (Opus) + 5% audit are live. The chart is fresh per pass — cross-run
     # control-chart persistence is a documented follow-up. ride_along stays "" until the
     # grapher supplies an adjacent-episode corpus (shadow of that check widens harmlessly).
+    processed: list[str] = []
     try:
-        return drain_once(
+        processed = drain_once(
             data_root, engine, backend, ts=now, scorer=scorer,
             window=window, time_budget_s=time_budget_s,
             ladder=LadderConfig(shadow=False),
             rng=random.Random(),
             chart=FalsePassChart(),
         )
+        return processed
     finally:
         # LIFECYCLE (graph-harness T2): flush + shut the embedded store down cleanly so this pass's
         # writes reach the RDB on disk. Without this the in-memory FalkorDB evaporated at process
         # exit — "processed N" with an empty store. In `finally` so a drain error still persists
-        # whatever committed before it. Best-effort: a close hiccup must not mask the drain result.
-        engine.close()
+        # whatever committed before it.
+        try:
+            engine.close()
+        except PersistenceError:
+            # DURABILITY FAILURE (harness-savefail): the SAVE did not reach disk, so this pass's
+            # graph edges are NOT durable — but drain already marked its entries DONE. Revert them to
+            # queued so the ledger AGREES with the (non-durable) store; the next ordinary worker pass
+            # re-extracts them (the existing resilience path). Then RE-RAISE so the worker fails loud.
+            _requeue_after_failed_persist(data_root, processed)
+            raise
+
+
+def _requeue_after_failed_persist(data_root: Path, processed: list[str]) -> None:
+    """Revert this pass's DONE entries back to queued after a failed store SAVE (harness-savefail).
+
+    Restores ledger↔store crash-consistency: if the edges did not persist, the entries must not stay
+    "done". Chosen over an "instruct the user to run a doctor requeue" message because doctor requeue
+    re-queues DEAD/stuck entries, not DONE ones — so it would not actually re-queue these; reverting
+    here is the simplest state where done⇔durable and queued⇔not.
+    """
+    if not processed:
+        return
+    from genesis.ledger.entry import Extracted  # noqa: PLC0415 — stdlib-cheap, keep near use
+    from genesis.ledger.store import read_all, update  # noqa: PLC0415
+
+    by_id = {e.entry_id: e for e in read_all(data_root)}
+    for entry_id in processed:
+        entry = by_id.get(entry_id)
+        if entry is not None and entry.extracted is Extracted.DONE:
+            entry.extracted = Extracted.NO
+            update(data_root, entry)
 
 
 # ---------------------------------------------------------------------------
@@ -137,6 +170,11 @@ def run_forever(data_root: Path, *, interval_s: float = 10.0) -> None:
             processed = run_once(data_root, now=now)
             if processed:
                 print(f"[genesis-worker] drained {len(processed)}: {processed}", flush=True)
+        except PersistenceError as exc:
+            # Loud, but the loop survives: run_once already reverted this pass's entries to queued,
+            # so the next pass re-extracts. Never a silent success (harness-savefail).
+            print(f"[genesis-worker] PERSISTENCE FAILURE — store did not persist ({exc}); entries "
+                  f"reverted to queued, retrying next pass.", flush=True)
         except Exception as exc:  # noqa: BLE001
             # Log to stdout/stderr (12-factor: logs as streams); never crash the loop.
             print(f"[genesis-worker] error during drain: {exc}", flush=True)
